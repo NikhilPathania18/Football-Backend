@@ -16,10 +16,10 @@ const matchSchema = new Schema({
     date:{
         type: Date 
     },
-    currentHalf:{
+    currentStatus:{
         type: String,
-        enum: ['first','second','extraTimeFirst','extraTimeSecond','penalties', 'halfTime', 'fullTime', 'extraTimeHalfTime'],
-        default: 'first'
+        enum: ['notStarted','firstHalf','halfTime','secondHalf','fullTime','extraTimeFirstHalf','extraTimeHalfTime','extraTimeSecondHalf','penalties', 'halfTime', 'fullTime', 'extraTimeHalfTime'],
+        default: 'notStarted'
     },
     halfLength:{
         type: Number
@@ -54,7 +54,7 @@ const matchSchema = new Schema({
                 enum: ['goal','yellowCard','redCard','penaltyMissed']
             },
             time:{
-                type: String
+                type: Number
             },
             player:{
                 type: mongoose.Schema.Types.ObjectId,
@@ -66,7 +66,7 @@ const matchSchema = new Schema({
             },
             goalType: {
                 type: String,
-                enum: ['openPlay', 'penalty' , 'freeKick', 'ownGoal']
+                enum: ['openPlay', 'penalty' , 'freeKick', 'ownGoal'] 
             },
             remarks:{
                 type: String 
@@ -81,7 +81,7 @@ const matchSchema = new Schema({
                 enum: ['goal','yellowCard','redCard','penaltyMissed']
             },
             time:{
-                type: String
+                type: Number
             },
             player:{
                 type: mongoose.Schema.Types.ObjectId,

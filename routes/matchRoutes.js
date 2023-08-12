@@ -1,5 +1,5 @@
 import express from 'express'
-import { endHalf, endMatch, getMatchDetails, getMatchesList, newMatch, startHalf, updateEvent, updateScore, updateStatus, updateWholeMatch } from '../controllers/match/matchControllers.js';
+import { deleteMatch, endHalf, endMatch, getMatchDetails, getMatchesList, newMatch, startHalf, updateEvent, updateScore, updateStatus, updateWholeMatch } from '../controllers/match/matchControllers.js';
 
 const router = express.Router();
 
@@ -23,4 +23,5 @@ router.get('/details/:id', getMatchDetails)
 
 router.get('/list/:status', getMatchesList)
 
+router.delete('/delete/:id', deleteMatch)
 export default router;

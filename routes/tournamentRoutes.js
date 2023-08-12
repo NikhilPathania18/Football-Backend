@@ -7,7 +7,7 @@ router.post('/new', createTournament)
 
 router.put('/add-teams/:id', addTeams)
 
-router.put('/change-status/:id',changeTournamentStatus)
+router.put('/change-status/:id', changeTournamentStatus)
 
 router.put('/update-tournament/:id', updateTournamentDetails)
 

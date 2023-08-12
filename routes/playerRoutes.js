@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createPlayer,
+  deletePlayer,
   getAllPlayers,
   getPlayerDetails,
   updatePlayer,
@@ -10,12 +11,14 @@ import multer from "multer";
 const upload = multer();
 const router = express.Router();
 
-router.post("/create-player", upload.single('image'), createPlayer);
+router.post("/create-player", upload.single('photo'), createPlayer);
 
-router.put("/update-player/:id", upload.single('image'), updatePlayer);
+router.put("/update-player/:id", upload.single('photo'), updatePlayer);
 
 router.get('/:id', getPlayerDetails)
 
 router.get('/list/:branchYear', getAllPlayers)
+
+router.delete('/delete/:id', deletePlayer);
 
 export default router;

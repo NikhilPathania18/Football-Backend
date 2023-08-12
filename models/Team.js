@@ -35,6 +35,9 @@ const teamSchema = new Schema({
     cleanSheets: {
         type: Number,
         default: 0
+    },
+    logo:{
+        type: String
     }
 })
 

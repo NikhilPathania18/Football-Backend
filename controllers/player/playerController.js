@@ -1,10 +1,10 @@
+import uploadFile from '../../helpers/fileUpload.js';
 import player from './../../models/Player.js';
 
 export const createPlayer = async(req,res) => {
     try {
         const {name, rollNo, branch, startYear, endYear, position} = req.body;
-        const image = req.files;
-
+        const image = req.file;
         if(!name || !rollNo){
             return res.status(400).send({
                 success: false,
@@ -19,6 +19,8 @@ export const createPlayer = async(req,res) => {
                 message: 'Player is already registered'
             })
         }
+        
+        const imageLink = await uploadFile(image,rollNo);
 
         const Player = await player.create({
             name,
@@ -26,11 +28,9 @@ export const createPlayer = async(req,res) => {
             branch,
             startYear,
             endYear,
-            position
+            position,
+            image: imageLink
         })
-
-        //add profile image here 
-
 
         return res.status(200).send({
             success: true,
@@ -48,10 +48,9 @@ export const createPlayer = async(req,res) => {
 
 export const updatePlayer = async(req,res) => {
     try {
-        const {name, rollNo, branch, startYear, endYear, position} = req.body;
+        const {name, rollNo, branch, startYear, endYear, position,photo} = req.body;
         const id = req.params.id;
-        const image = req.files;
-
+        const image = req.file;
         const Player = await player.findById(id);
 
         if(!Player){
@@ -67,9 +66,10 @@ export const updatePlayer = async(req,res) => {
         if(startYear)   Player.startYear = startYear;
         if(endYear)     Player.endYear = endYear;
         if(position)    Player.position = position;
+        const imageUrl = await uploadFile(image,rollNo)
 
-
-        //update profile image here
+        if(imageUrl)
+        Player.image = imageUrl
 
         Player.save();
         
@@ -78,6 +78,7 @@ export const updatePlayer = async(req,res) => {
             message: 'Player details updated successfully'
         })
     } catch (error) {
+        console.log(error)
         return res.status(500).send({
             success: false,
             message: 'Internal server error'
@@ -88,7 +89,6 @@ export const updatePlayer = async(req,res) => {
 export const getPlayerDetails = async(req,res) => {
     try {
         const id = req.params.id;
-
         const playerDetails = await player.findById(id);
 
         if(!playerDetails){
@@ -143,6 +143,33 @@ export const getAllPlayers = async(req,res) => {
         return res.status(500).send({
             success: false,
             message:'Internal Server Error'
+        })
+    }
+}
+
+export const deletePlayer = async(req,res) => {
+    try {
+        const id = req.params.id;
+
+        const Player = await player.findById(id);
+
+        if(!player){
+            return res.status(404).send({
+                success: false,
+                message: 'Player does not exist'
+            })
+        }
+
+        await player.findByIdAndDelete(id);
+
+        return res.status(200).send({
+            success: true,
+            message: 'Player deleted successfully'
+        })
+    } catch (error) {
+        return res.status(500).send({
+            success: false,
+            message: 'Internal Server Error'
         })
     }
 }

@@ -6,7 +6,8 @@ aws.config.update({
   region: "ap-south-1",
 });
 
-let uploadFile = async (file) => {
+let uploadFile = async (file, rollNo) => {
+  if(!file) return;
   return new Promise(function (resolve, reject) {
     // this function will upload file to aws and return the link
     let s3 = new aws.S3({ apiVersion: "2006-03-01" }); // we will be using the s3 service of aws
@@ -14,7 +15,7 @@ let uploadFile = async (file) => {
     var uploadParams = {
       ACL: "public-read",
       Bucket: "classroom-training-bucket",
-      Key: "abc/" + file.originalname,
+      Key: "player/" + rollNo + Date.now(),
       Body: file.buffer,
     };
     s3.upload(uploadParams, function (err, data) {
@@ -23,7 +24,6 @@ let uploadFile = async (file) => {
       }
       return resolve(data.Location);
     });
-
   });
 };
 

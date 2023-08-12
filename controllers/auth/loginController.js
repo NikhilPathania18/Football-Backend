@@ -1,6 +1,6 @@
 import { comparePassword } from '../../helpers/encrypt.js';
 import user from '../../models/user.js';
-
+import jwt from 'jsonwebtoken'
 
 const loginUser = async(req,res) => {
     try {
@@ -28,11 +28,15 @@ const loginUser = async(req,res) => {
 
 
         //jwt code here
-
+        const token = await jwt.sign({email},process.env.JWT_SECRET);
 
         return res.status(200).send({
             succes: true,
-            message: 'Login successfull'
+            message: 'Login successfull',
+            user:{
+                token,
+                email
+            }
         })
     } catch (error) {
         res.status(500).send({

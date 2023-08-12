@@ -31,12 +31,12 @@ export const newMatch = async (req, res) => {
         message: "Please provide all required fields",
       });
     }
-
+    console.log("date", new Date(date));
     const matchDetails = await match.create({
       tournament,
       matchNumber,
       matchName,
-      date,
+      date: new Date(date),
       venue,
       halfLength,
       extraTimeHalfLength,
@@ -58,6 +58,7 @@ export const newMatch = async (req, res) => {
       message: "Match created successfully",
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).send({
       success: false,
       message: "Internal Server Error",
@@ -160,17 +161,15 @@ export const endMatch = async (req, res) => {
       updateStats(event)
     );
 
-
-    matchDetails.status='ended';
+    matchDetails.status = "ended";
     await matchDetails.save();
 
-
-    await Promise.all(updatePromises)
+    await Promise.all(updatePromises);
 
     return res.status(200).send({
       success: true,
-      message: 'Match ended'
-    })
+      message: "Match ended",
+    });
   } catch (error) {
     return res.status(500).send({
       success: false,
@@ -185,22 +184,22 @@ export const updateWholeMatch = async (req, res) => {
     const dataToUpdate = req.body;
 
     const Match = await match.findOneAndUpdate(
-      {_id: id},
-      { $set: dataToUpdate},
-      { new: true}
+      { _id: id },
+      { $set: dataToUpdate },
+      { new: true }
     );
 
-    if(!Match){
+    if (!Match) {
       return res.status(404).send({
         success: false,
-        message: 'Match not found'
-      })
+        message: "Match not found",
+      });
     }
 
     return res.status(200).send({
       success: true,
-      message: 'Match details updated'
-    })
+      message: "Match details updated",
+    });
   } catch (error) {
     return res.status(500).send({
       success: false,
@@ -222,14 +221,29 @@ export const updateScore = async (req, res) => {
       });
     }
 
-    if(Match.status === 'ended'){
+    if (Match.status === "ended") {
       return res.status(400).send({
         success: false,
-        message: 'Match has ended'
-      })
+        message: "Match has ended",
+      });
     }
 
-    Match.status = 'ongoing'
+    Match.status = "ongoing";
+
+    if (!event.time) {
+      // Create two Date objects representing the start and end times
+      const startTime = Match.firstHalfStartTime; // Replace this with your start time
+      const endTime = new Date(); // Replace this with your end time
+
+      // Calculate the time difference in milliseconds
+      const timeDifferenceMs = endTime - startTime;
+
+      // Convert the time difference to minutes
+      const timeDifferenceMinutes = Math.ceil(timeDifferenceMs / (1000 * 60));
+
+      console.log(`Time passed: ${timeDifferenceMinutes} minutes`);
+    }
+
 
     if (team === "A") {
       Match.teamAScore++;
@@ -239,6 +253,21 @@ export const updateScore = async (req, res) => {
       Match.teamBScore++;
       Match.teamBEvents.push(event);
     }
+
+    // const Player =await  player.findById(event.player);
+    // if(Player){
+    //   Player.goals++;
+    //   await Player.save();
+    // }
+
+    // if(event.assist){
+    //   const Assister = await player.findById(event.assist);
+    //   if(Assister){
+    //     Assister.assists++;
+    //     await Assister.save();
+    //   }
+    // }
+
     await Match.save();
 
     return res.status(200).send({
@@ -246,6 +275,7 @@ export const updateScore = async (req, res) => {
       message: "Match Data updated",
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).send({
       success: false,
       message: "Internal Server Error",
@@ -316,6 +346,7 @@ export const startHalf = async (req, res) => {
   try {
     const id = req.params.id;
     const { half } = req.body;
+    console.log('half',half)
     const Match = await match.findById(id);
 
     if (!Match) {
@@ -332,11 +363,65 @@ export const startHalf = async (req, res) => {
     else if (half === "extraTimeSecondHalf")
       Match.extraTimeSecondHalfStartTime = new Date();
 
+    Match.currentStatus = half;
+    
+    Match.status = 'ongoing';
     await Match.save();
 
     return res.status(200).send({
       success: true,
       message: "Half Started",
+    });
+  } catch (error) {
+    console.log(error)
+    return res.status(500).send({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export const endHalf = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const Match = await match.findById(id);
+
+    switch (Match.currentHalf) {
+      case "firstHalf":
+        Match.currentHalf = "halfTime";
+        break;
+      case "halfTime":
+        Match.currentHalf = "secondHalf";
+        break;
+      case "secondHalf":
+        Match.currentHalf = "fullTime";
+        break;
+      case "fullTime":
+        Match.currentHalf = "extraTimeFirstHalf";
+        break;
+      case "extraTimeFirstHalf":
+        Match.currentHalf = "extraTimeHalfTime";
+        break;
+      case "extraTimeHalfTime":
+        Match.currentHalf = "extraTimeSecondHalf";
+        break;
+      case "extraTimeSecondHalf":
+        Match.currentHalf = "extraTimeFullTime";
+        break;
+      case "extraTimeFullTime":
+        Match.currentHalf = "penalties";
+        break;
+      case "penalties":
+        Match.currentHalf = "fullTime";
+        break;
+    }
+
+    await Match.save();
+
+    return res.status(200).send({
+      success: true,
+      message: "current status of half changed",
     });
   } catch (error) {
     return res.status(500).send({
@@ -346,54 +431,18 @@ export const startHalf = async (req, res) => {
   }
 };
 
-export const endHalf = async(req,res) => {
-  try {
-    const id = req.params.id;
-
-    const Match = await match.findById(id);
-
-    switch(Match.currentHalf){
-      case 'firstHalf': Match.currentHalf = 'halfTime'
-                        break;
-      case 'halfTime':  Match.currentHalf = 'secondHalf'
-                        break;
-      case 'secondHalf':Match.currentHalf = 'fullTime'
-                        break;
-      case 'fullTime':  Match.currentHalf = 'extraTimeFirstHalf'
-                        break;
-      case 'extraTimeFirstHalf': Match.currentHalf = 'extraTimeHalfTime'
-                        break;
-      case 'extraTimeHalfTime' : Match.currentHalf = 'extraTimeSecondHalf'
-                        break;
-      case 'extraTimeSecondHalf': Match.currentHalf = 'extraTimeFullTime'
-                        break;
-      case 'extraTimeFullTime'  : Match.currentHalf = 'penalties'
-                        break;
-      case 'penalties' :  Match.currentHalf = 'fullTime'
-                        break;
-    }
-
-    await Match.save();
-
-    return res.status(200).send({
-      success: true,
-      message: 'current status of half changed'
-    })
-  } catch (error) {
-    return res.status(500).send({
-      success: false,
-      message: 'Internal Server Error'
-    })
-  }
-}
-
 //get requests
 
 export const getMatchDetails = async (req, res) => {
   try {
     const id = req.params.id;
 
-    const Match = await match.findById(id);
+    const Match = await match
+      .findById(id)
+      .populate("teamA")
+      .populate("teamB")
+      .populate("playersA")
+      .populate("playersB");
 
     if (!Match) {
       return res.status(200).send({
@@ -407,6 +456,7 @@ export const getMatchDetails = async (req, res) => {
       matchDetails: Match,
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).send({
       success: false,
       message: "Internal Server Error",
@@ -414,29 +464,56 @@ export const getMatchDetails = async (req, res) => {
   }
 };
 
-
-export const getMatchesList = async(req,res) => {
+export const getMatchesList = async (req, res) => {
   try {
     const status = req.params.status;
     let matchesList;
-    if(status === 'all'){
-      matchesList = await match.find({})
+    if (status === "all") {
+      matchesList = await match
+        .find({})
+        .populate("tournament")
+        .populate("teamA")
+        .populate("teamB");
       return res.status(200).send({
         success: true,
-        matchesList
-      })
-    }  
-    else{
-      matchesList = await match.find({status})
+        matchesList,
+      });
+    } else {
+      matchesList = await match.find({ status });
       return res.status(200).send({
         success: true,
-        matchesList
-      })
+        matchesList,
+      });
     }
   } catch (error) {
     return res.status(500).send({
       success: false,
-      message: 'Internal Server Error'
-    })
+      message: "Internal Server Error",
+    });
   }
-}
+};
+
+export const deleteMatch = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const Match = await match.findByIdAndDelete(id);
+
+    if (!Match) {
+      return res.status(404).send({
+        success: false,
+        message: "Match Not found",
+      });
+    }
+
+    return res.status(200).send({
+      success: true,
+      message: "Match deleted successfully",
+    });
+  } catch (error) {
+    return res.status(500).send({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};

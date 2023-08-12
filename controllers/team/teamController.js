@@ -1,8 +1,12 @@
+import uploadFile from '../../helpers/fileUpload.js';
 import team from './../../models/Team.js';
 
 export const createTeam = async(req,res) => {
     try {
-        const {name, type} = req.body;
+        const {name, type, players, numberOfMatches, wins, loses, draw, cleanSheets} = req.body;
+
+        console.log('body', req.body)
+        const logo = req.file
 
         if(!name || !type)  return res.status(400).send({success: false, message: 'Insufficient information'})
 
@@ -12,7 +16,7 @@ export const createTeam = async(req,res) => {
                 message: 'Invalid Team type'
             })
         }
-        const teamExists = await team.findOne({name});
+        const teamExists = await team.findOne({name: name.toLowerCase()});
 
         if(teamExists){
             return res. status(400).send({
@@ -21,9 +25,17 @@ export const createTeam = async(req,res) => {
             })
         }
 
-        team.create({
-            name,
-            type
+        const imageUrl = await uploadFile(logo,name);
+        await team.create({
+            name: name.toLowerCase(),
+            type,
+            players,
+            numberOfMatches,
+            wins,
+            loses,
+            draw,
+            cleanSheets,
+            logo: imageUrl
         })
 
         return res.status(200).send({
@@ -60,7 +72,6 @@ export const addPlayersInTeam = async(req,res) => {
         });
 
         Team.save();
-        console.log(Team)
         return res.status(200).send({
             success: true,
             message: 'Players added successfully'
@@ -90,6 +101,88 @@ export const getTeamDetails = async(req,res) => {
             success: true,
             message: 'Team details fetched successfully',
             teamDetails
+        })
+    } catch (error) {
+        return res.status(500).send({
+            success: false,
+            message: 'Internal Server Error'
+        })
+    }
+}
+
+export const getAllTeamsList = async(req,res) => {
+    try {
+        const teamsList = await team.find({}).populate('players')
+
+        return res.status(200).send({
+            success: true,
+            teamsList
+        })
+
+    } catch (error) {
+        return res.status(500).send({
+            success: false,
+            message: 'Internal Server Error'
+        })
+    }
+}
+
+export const deleteTeam = async(req,res) => {
+    try {
+        const id = req.params.id;
+
+        const Team = await team.findByIdAndDelete(id);
+
+
+        return res.status(200).send({
+            success: true,
+            message: 'Team Deleted successfully'
+        })
+    } catch (error) {
+        return res.status(500).send({
+            success: false,
+            message: 'Internal Server Error'
+        })
+    }
+}
+
+export const updateTeamDetails = async(req,res) => {
+    try {
+        const id = req.params.id;
+
+        const image = req.file;
+
+        const {name, type, players, numberOfMatches, wins, loses, draw, cleanSheets, logo} = req.body
+
+        const Team = await team.findById(id);
+
+        if(!Team){
+            return res.status(404).send({
+                success: false,
+                message: 'Team Not found'
+            })
+        }
+
+        if(name)    Team.name = name
+        if(type)    Team.type = type;
+        if(players) Team.players = players;
+        if(numberOfMatches) Team.numberOfMatches = numberOfMatches;
+        if(wins)    Team.wins = wins;
+        if(loses)   Team.loses = loses;
+        if(draw)    Team.draw = draw;
+        if(cleanSheets) Team.cleanSheets = cleanSheets;
+        if(logo)    Team.logo = logo;
+
+        const imageUrl = await uploadFile(image,name);
+
+        if(imageUrl)    Team.logo = imageUrl;
+
+        if(!logo&&!image)   Team.logo = null;
+        await Team.save();
+
+        return res.status(200).send({
+            success: true,
+            message: 'Team Details Updated'
         })
     } catch (error) {
         return res.status(500).send({
