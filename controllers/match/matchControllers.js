@@ -443,7 +443,13 @@ export const getMatchDetails = async (req, res) => {
       .populate("teamB")
       .populate("playersA")
       .populate("playersB")
-      .populate('tournament');
+      .populate('tournament')
+      .populate({
+        path: 'teamAEvents',
+        populate:{
+          path: 'player'
+        }
+      })
 
     if (!Match) {
       return res.status(200).send({
