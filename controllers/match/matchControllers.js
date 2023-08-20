@@ -442,7 +442,8 @@ export const getMatchDetails = async (req, res) => {
       .populate("teamA")
       .populate("teamB")
       .populate("playersA")
-      .populate("playersB");
+      .populate("playersB")
+      .populate('tournament');
 
     if (!Match) {
       return res.status(200).send({

@@ -38,7 +38,51 @@ const tournamentSchema = new Schema({
         type: String,
         enum: ['upcoming','ongoing','ended'],
         default: 'upcoming'
-    }
+    },
+    numberOfGroups:{
+        type: Number,
+        default: 1
+    },
+    pointsTable:[{
+        groupName:{
+            type: String
+        },
+        teamStats:[{
+            team:{
+                type: mongoose.Schema.Types.ObjectId
+            },
+            matches:{
+                type: Number,
+                default: 0
+            },
+            wins:{
+                type: Number,
+                default: 0
+            },
+            loses:{
+                type: Number,
+                default: 0
+            },
+            draws: {
+                type: Number,
+                default: 0
+            },
+            goalsScored: {
+                type: Number,
+                default: 0
+            },
+            goalsConceeded:{
+                type: Number,
+                default: 0
+            },
+            yellowCards:{
+                type: Number,
+                default: 0
+            }
+        }]
+        
+
+    }]
 })
 
 const tournament = mongoose.model('tournament', tournamentSchema)
