@@ -54,7 +54,7 @@ const matchSchema = new Schema({
                 enum: ['goal','yellowCard','redCard','penaltyMissed']
             },
             time:{
-                type: Number
+                type: String
             },
             player:{
                 type: mongoose.Schema.Types.ObjectId,
@@ -81,7 +81,7 @@ const matchSchema = new Schema({
                 enum: ['goal','yellowCard','redCard','penaltyMissed']
             },
             time:{
-                type: Number
+                type: String
             },
             player:{
                 type: mongoose.Schema.Types.ObjectId,

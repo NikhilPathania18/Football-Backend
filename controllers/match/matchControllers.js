@@ -230,18 +230,45 @@ export const updateScore = async (req, res) => {
 
     Match.status = "ongoing";
 
-    if (!event.time) {
-      // Create two Date objects representing the start and end times
-      const startTime = Match.firstHalfStartTime; // Replace this with your start time
-      const endTime = new Date(); // Replace this with your end time
+    if(!event.time||event.time.length === 0){
+      const currentStatus = Match.currentStatus;
+      let startTime ;
 
-      // Calculate the time difference in milliseconds
-      const timeDifferenceMs = endTime - startTime;
+      if(currentStatus==='firstHalf') startTime = Match.firstHalfStartTime
+      else if(currentStatus === 'secondHalf') startTime = Match.secondHalfStartTime;
+      else if(currentStatus === 'extraTimeFirstHalf') startTime = Match.extraTimeFirstHalfStartTime;
+      else if(currentStatus === 'extraTimeSecondHalf')
+      startTime = Match.extraTimeSecondHalfStartTime;
+      
+      let endTime = new Date();
+      let timeDiff = endTime - startTime;
+      let timeInMinutes = timeDiff / (1000 * 60);
+      let updatedTime = Math.ceil(timeInMinutes);
 
-      // Convert the time difference to minutes
-      const timeDifferenceMinutes = Math.ceil(timeDifferenceMs / (1000 * 60));
-
-      console.log(`Time passed: ${timeDifferenceMinutes} minutes`);
+      if(currentStatus==='firstHalf'){
+        if (updatedTime > Match.halfLength)
+        event.time = Match.halfLength + "+" + (updatedTime - Match.halfLength) 
+        else event.time = updatedTime+""
+      }
+      else if(currentStatus === 'secondHalf'){
+        if (updatedTime > Match.halfLength) 
+        event.time = Match.halfLength * 2 + "+" + (updatedTime - Match.halfLength) 
+        else event.time=(Match.halfLength + updatedTime)+""
+      }
+      else if(currentStatus === 'extraTimeFirstHalf'){
+        if (updatedTime > Match.extraTimeHalfLength ) {
+          event.time = 2 * Match.halfLength + Match.extraTimeHalfLength +"+" +(updatedTime - Match.extraTimeHalfLength);
+        }
+        else
+        event.time = 2 * Match.halfLength + updatedTime + ""
+      }
+      else if(currentStatus === 'extraTimeSecondHalf'){
+        if(updatedTime > Match.extraTimeHalfLength){
+          event.time = 2* Match.halfLength + 2*Match.extraTimeHalfLength + "+" (updatedTime - Match.extraTimeHalfLength);
+        }
+        else
+        event.time = 2* Match.halfLength + Match.extraTimeHalfLength + updatedTime + ""
+      }
     }
 
 
@@ -287,6 +314,7 @@ export const updateEvent = async (req, res) => {
   try {
     const id = req.params.id;
     const { team, event } = req.body;
+    console.log('event',event)
 
     const Match = await match.findById(id);
 
@@ -296,17 +324,58 @@ export const updateEvent = async (req, res) => {
         message: "Match not found",
       });
     }
+    if(!event.time||event.time.length === 0){
+      const currentStatus = Match.currentStatus;
+      let startTime ;
+
+      if(currentStatus==='firstHalf') startTime = Match.firstHalfStartTime
+      else if(currentStatus === 'secondHalf') startTime = Match.secondHalfStartTime;
+      else if(currentStatus === 'extraTimeFirstHalf') startTime = Match.extraTimeFirstHalfStartTime;
+      else if(currentStatus === 'extraTimeSecondHalf')
+      startTime = Match.extraTimeSecondHalfStartTime;
+      
+      let endTime = new Date();
+      let timeDiff = endTime - startTime;
+      let timeInMinutes = timeDiff / (1000 * 60);
+      let updatedTime = Math.ceil(timeInMinutes);
+
+      if(currentStatus==='firstHalf'){
+        if (updatedTime > Match.halfLength)
+        event.time = Match.halfLength + "+" + (updatedTime - Match.halfLength) 
+        else event.time = updatedTime+""
+      }
+      else if(currentStatus === 'secondHalf'){
+        if (updatedTime > Match.halfLength) 
+        event.time = Match.halfLength * 2 + "+" + (updatedTime - Match.halfLength) 
+        else event.time=(Match.halfLength + updatedTime)+""
+      }
+      else if(currentStatus === 'extraTimeFirstHalf'){
+        if (updatedTime > Match.extraTimeHalfLength ) {
+          event.time = 2 * Match.halfLength + Match.extraTimeHalfLength +"+" +(updatedTime - Match.extraTimeHalfLength);
+        }
+        else
+        event.time = 2 * Match.halfLength + updatedTime + ""
+      }
+      else if(currentStatus === 'extraTimeSecondHalf'){
+        if(updatedTime > Match.extraTimeHalfLength){
+          event.time = 2* Match.halfLength + 2*Match.extraTimeHalfLength + "+" (updatedTime - Match.extraTimeHalfLength);
+        }
+        else
+        event.time = 2* Match.halfLength + Match.extraTimeHalfLength + updatedTime + ""
+      }
+    }
 
     if (team === "A") Match.teamAEvents.push(event);
     else if (team === "B") Match.teamBEvents.push(event);
 
-    Match.save();
+    await Match.save();
 
     return res.status(200).send({
       success: true,
       message: "Event added",
     });
   } catch (error) {
+    console.log(error)
     res.status(500).send({
       success: false,
       message: "Internal Server Error",
@@ -446,6 +515,12 @@ export const getMatchDetails = async (req, res) => {
       .populate('tournament')
       .populate({
         path: 'teamAEvents',
+        populate:{
+          path: 'player'
+        }
+      })
+      .populate({
+        path: 'teamBEvents',
         populate:{
           path: 'player'
         }
