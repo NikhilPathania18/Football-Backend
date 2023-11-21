@@ -1,8 +1,18 @@
 import aws from 'aws-sdk'
+import cloudinary from 'cloudinary'
+
+cloudinary.config({ 
+  cloud_name: 'dksin9cm5', 
+  api_key: '518895216966278', 
+  api_secret: 'dyrhi30grRUQ9zSah9-i_I0jofk',
+  secure: true 
+});
 
 aws.config.update({
-  accessKeyId: "AKIAY3L35MCRZNIRGT6N",
-  secretAccessKey: "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",
+  // accessKeyId: "AKIAY3L35MCRZNIRGT6N",
+  // secretAccessKey: "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",
+  accessKeyId: "AKIAZI6IM5CP4QVM6IZG",
+  secretAccessKey: "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",
   region: "ap-south-1",
 });
 
@@ -26,5 +36,18 @@ let uploadFile = async (file, rollNo) => {
     });
   });
 };
+
+const uploadFileCloudinary = async(file) => {
+  if(!file) return;
+
+  let imageUrl
+  console.log(file);
+  cloudinary.uploader.upload(file.tempFilePath,(err,result)=>{
+    console.log(err)
+    if(err) return;
+    console.log(result)
+    return result;
+  })
+}
 
 export default uploadFile

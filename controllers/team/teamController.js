@@ -173,7 +173,8 @@ export const updateTeamDetails = async(req,res) => {
         if(cleanSheets) Team.cleanSheets = cleanSheets;
         if(logo)    Team.logo = logo;
 
-        const imageUrl = await uploadFile(image,name);
+        console.log(image)
+        const imageUrl = await uploadFile(image);
 
         if(imageUrl)    Team.logo = imageUrl;
 
