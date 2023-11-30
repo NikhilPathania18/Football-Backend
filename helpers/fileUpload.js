@@ -9,10 +9,10 @@ cloudinary.config({
 });
 
 aws.config.update({
-  // accessKeyId: "AKIAY3L35MCRZNIRGT6N",
-  // secretAccessKey: "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",
-  accessKeyId: "AKIAZI6IM5CP4QVM6IZG",
-  secretAccessKey: "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",
+  accessKeyId: "AKIAY3L35MCRZNIRGT6N",
+  secretAccessKey: "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",
+  // accessKeyId: "AKIAZI6IM5CP4QVM6IZG",
+  // secretAccessKey: "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",
   region: "ap-south-1",
 });
 
