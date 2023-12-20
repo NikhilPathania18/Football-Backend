@@ -1,7 +1,7 @@
 import match from "../../models/Match.js";
 import player from "../../models/Player.js";
 import team from "../../models/Team.js";
-import tournamentModel from './../../models/Tournament';
+import tournamentModel from './../../models/Tournament.js';
 
 const decorateTime = (time) => {
   let hours, minutes;
