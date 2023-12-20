@@ -1,11 +1,14 @@
 import aws from 'aws-sdk'
 import cloudinary from 'cloudinary'
+import DataUriParser from 'datauri/parser.js'
+import path from 'path'
+import dotenv from 'dotenv'
+dotenv.config()
 
-cloudinary.config({ 
-  cloud_name: 'dksin9cm5', 
-  api_key: '518895216966278', 
-  api_secret: 'dyrhi30grRUQ9zSah9-i_I0jofk',
-  secure: true 
+cloudinary.v2.config({ 
+  cloud_name: process.env.CLOUDINARY_CLIENT_NAME, 
+  api_key: process.env.CLOUDINARY_CLIENT_API, 
+  api_secret: process.env.CLOUDINARY_CLIENT_SECRET
 });
 
 aws.config.update({
@@ -17,6 +20,7 @@ aws.config.update({
 });
 
 let uploadFile = async (file, rollNo) => {
+  console.log('file',file)
   if(!file) return;
   return new Promise(function (resolve, reject) {
     // this function will upload file to aws and return the link
@@ -30,24 +34,23 @@ let uploadFile = async (file, rollNo) => {
     };
     s3.upload(uploadParams, function (err, data) {
       if (err) {
+        console.log('error',err)
         return reject({ error: err });
       }
+
+      console.log('data', data)
       return resolve(data.Location);
     });
   });
 };
 
 const uploadFileCloudinary = async(file) => {
-  if(!file) return;
 
-  let imageUrl
-  console.log(file);
-  cloudinary.uploader.upload(file.tempFilePath,(err,result)=>{
-    console.log(err)
-    if(err) return;
-    console.log(result)
-    return result;
-  })
+    const parser = new DataUriParser();
+    const extName = path.extname(file.originalname).toString();
+    const dataUri =  parser.format(extName, file.buffer)
+
+    return (await cloudinary.v2.uploader.upload(dataUri.content)).url;
 }
 
-export default uploadFile
+export default uploadFileCloudinary

@@ -131,6 +131,42 @@ const matchSchema = new Schema({
     winner:{
         type: String,
         default: 'draw'
+    },
+    isKnockout:{
+        type:Boolean,
+        default: false
+    },
+    playersPlayedA:{
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'player'
+        }],
+        default: []
+    },
+    playersPlayedB:{
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'player'
+        }],
+        default: []
+    },
+    startingElevenA:{
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'player'
+        }],
+        default: []
+    },
+    startingElevenB:{
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'player'
+        }],
+        default: []
+    },
+    time: {
+        type: String,
+        default: "5:00 PM"
     }
 })
 

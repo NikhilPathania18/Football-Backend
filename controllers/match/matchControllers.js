@@ -1,7 +1,31 @@
 import match from "../../models/Match.js";
 import player from "../../models/Player.js";
 import team from "../../models/Team.js";
+import tournamentModel from './../../models/Tournament';
 
+const decorateTime = (time) => {
+  let hours, minutes;
+
+  time = time.split(' ')
+
+  console.log('time' , time)
+  if(time[1]!="AM"&&time[1]!="PM")  return false;
+
+  minutes = Number(time[0].split(':')[1])
+  hours = Number(time[0].split(":")[0])
+
+  if(time[1]=="PM") hours+=12;
+
+  if(hours==24) hours = 0;
+  if(minutes == 60) minutes = 0;
+
+  if(hours>=24||minutes>=60)  return false;
+
+  return {hours,minutes};
+}
+
+
+console.log(decorateTime("23:30 PM"))
 export const newMatch = async (req, res) => {
   try {
     const {
@@ -23,20 +47,35 @@ export const newMatch = async (req, res) => {
       teamAPenalties,
       teamBPenalties,
       status,
+      isKnockout,
+      time
     } = req.body;
 
-    if (!tournament || !teamA || !teamB || !date || !halfLength) {
+    if (!tournament || !teamA || !teamB || !date || !halfLength || !time) {
       return res.status(400).send({
         success: false,
         message: "Please provide all required fields",
       });
     }
-    console.log("date", new Date(date));
+    const decoratedTime = decorateTime(time);
+
+    if(!decoratedTime)  return res.status(400).send({
+      success: false,
+      message: 'Invalid Time'
+    })
+
+    
+    const Tournament = await tournamentModel.findById(tournament);
+    if(!Tournament) return res.status(404).send({
+      success: false,
+      message: 'Tournament Not Found'
+    })
+
     const matchDetails = await match.create({
       tournament,
       matchNumber,
       matchName,
-      date: new Date(date),
+      date: new Date(`${date} ${decoratedTime.hours}:${decoratedTime.hours}:${decoratedTime.minutes}:00`),
       venue,
       halfLength,
       extraTimeHalfLength,
@@ -50,9 +89,14 @@ export const newMatch = async (req, res) => {
       teamBScore,
       teamAPenalties,
       teamBPenalties,
+      isKnockout: isKnockout?isKnockout:false,
       status: status ? status : "upcoming",
     });
 
+    Tournament.matches.push(matchDetails._id);
+    await Tournament.save();
+
+    
     return res.status(200).send({
       success: true,
       message: "Match created successfully",

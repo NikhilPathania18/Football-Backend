@@ -1,5 +1,5 @@
 import express from 'express'
-import { addPlayersInTeam, createTeam, deleteTeam, getAllTeamsList, getTeamDetails, updateTeamDetails } from '../controllers/team/teamController.js';
+import { addPlayersInTeam, createTeam, deleteTeam, getAllTeamsList, getPlayersOfTeam, getTeamDetails, updateTeamDetails } from '../controllers/team/teamController.js';
 import multer from 'multer'
 
 const router = express.Router();
@@ -17,5 +17,7 @@ router.get('/list/all',getAllTeamsList)
 router.delete('/delete/:id', deleteTeam)
 
 router.put('/update/:id',upload.single('logo'), updateTeamDetails)
+
+router.get('/player-list/:id', getPlayersOfTeam);
 
 export default router;

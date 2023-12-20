@@ -9,6 +9,7 @@ import matchRoutes from './routes/matchRoutes.js';
 import teamRoutes from './routes/teamRoutes.js';
 import playerRoutes from './routes/playerRoutes.js';
 import tournamentRoutes from './routes/tournamentRoutes.js';
+import newsRoutes from './routes/newsRoutes.js'
 import multer from 'multer' 
 
 const app = express();
@@ -44,3 +45,4 @@ app.use('/match', matchRoutes);
 app.use('/player', playerRoutes)
 app.use('/team', teamRoutes)
 app.use('/tournament', tournamentRoutes)
+app.use('/news', newsRoutes)

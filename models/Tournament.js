@@ -44,7 +44,7 @@ const tournamentSchema = new Schema({
         default: 1
     },
     pointsTable:[{
-        groupName:{
+        title:{
             type: String
         },
         teamStats:[{
@@ -55,34 +55,50 @@ const tournamentSchema = new Schema({
                 type: Number,
                 default: 0
             },
-            wins:{
+            win:{
                 type: Number,
                 default: 0
             },
-            loses:{
+            lost:{
                 type: Number,
                 default: 0
             },
-            draws: {
+            draw: {
                 type: Number,
                 default: 0
             },
-            goalsScored: {
+            gf: {
                 type: Number,
                 default: 0
             },
-            goalsConceeded:{
+            ga:{
                 type: Number,
                 default: 0
             },
             yellowCards:{
                 type: Number,
                 default: 0
+            },
+            points:{
+                type: Number,
+                default: 0
             }
         }]
-        
-
-    }]
+    }],
+    numberOfGoals:{
+        type: Number,
+        default: 0
+    },
+    numberOfMatches:{
+        type: Number,
+        default: 0
+    },
+    mostGoals:{
+        type: Map
+    },
+    mostAssists:{
+        type: Map
+    }
 })
 
 const tournament = mongoose.model('tournament', tournamentSchema)

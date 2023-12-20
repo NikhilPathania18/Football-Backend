@@ -203,3 +203,62 @@ export const getTournaments = async(req,res) => {
         })
     }
 }
+
+export const getMatchesList = async(req,res) => {
+    try {
+        const {id} = req.params;
+
+        if(!id) return res.status(404).send({
+            success: false,
+            message: 'Tournament Id Not found'
+        })
+
+        const Tournament = await tournament.findById(id).populate('matches');
+
+        if(!Tournament) return res.status(404).send({
+            success: false,
+            message: 'Tournament not found'
+        })
+
+        return res.status(200).send({
+            success: true,
+            matches: Tournament.matches
+        })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).send({
+            success: false,
+            message: 'Internal server Error'
+        })
+    }
+}
+
+
+export const getTeamList = async(req,res) => {
+    try {
+        const {id} = req.params;
+
+        if(!id) return res.status(400).send({
+            success: false,
+            message: 'Tournament Id Not Found'
+        })
+
+        const Tournament = await tournament.findById(id).populate('teams');
+
+        if(!Tournament) return res.status(404).send({
+            success: false,
+            message: 'Tournament Not Found'
+        })
+
+        return res.status(200).send({
+            success: true,
+            teams: Tournament.teams
+        })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).send({
+            success: false,
+            message: 'Internal Server Error'
+        })
+    }
+}

@@ -192,3 +192,33 @@ export const updateTeamDetails = async(req,res) => {
         })
     }
 }
+
+export const getPlayersOfTeam = async(req,res) => {
+    try {
+        const {id} = req.params
+
+        if(!id) return res.status(404).send({
+            success: false,
+            message: 'Team Id not found'
+        })
+
+        const Team = await team.findById(id).populate('players');
+
+        if(!Team)   return res.status(404).send({
+            success: false,
+            message: "Team Not found"
+        })
+
+        return res.status(200).send({
+            success: true,
+            players: Team.players
+        })
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).send({
+            success: false,
+            message: 'Internal Server Error'
+        })
+    }
+}
