@@ -1,5 +1,5 @@
 import express from 'express'
-import { addTeams, changeTournamentStatus, createTournament, getMatchesList, getTeamList, getTournamentDetails, getTournaments, updateTournamentDetails } from '../controllers/tournament/tournamentController.js';
+import { addTeams, changeTournamentStatus, createTournament, getLatestTournament, getMatchesList, getTeamList, getTournamentDetails, getTournaments, setLatestTournament, updateTournamentDetails } from '../controllers/tournament/tournamentController.js';
 
 const router = express.Router();
 
@@ -19,4 +19,7 @@ router.get('/matches-list/:id', getMatchesList)
 
 router.get('/teams-list/:id', getTeamList)
 
+router.post('/set-latest-tournament/:id',setLatestTournament)
+
+router.get('/get-latest-tournament', getLatestTournament)
 export default router;

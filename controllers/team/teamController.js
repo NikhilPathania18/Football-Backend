@@ -1,4 +1,6 @@
 import uploadFile from '../../helpers/fileUpload.js';
+import latestTournament from '../../models/LatestTournament.js';
+import tournament from '../../models/Tournament.js';
 import team from './../../models/Team.js';
 
 export const createTeam = async(req,res) => {
@@ -105,7 +107,7 @@ export const getTeamDetails = async(req,res) => {
     } catch (error) {
         return res.status(500).send({
             success: false,
-            message: 'Internal Server Error'
+            message: 'Internal Server Error  here'
         })
     }
 }
@@ -214,6 +216,35 @@ export const getPlayersOfTeam = async(req,res) => {
             players: Team.players
         })
 
+    } catch (error) {
+        console.log(error)
+        return res.status(500).send({
+            success: false,
+            message: 'Internal Server Error'
+        })
+    }
+}
+
+export const getLatestTournamentTeams = async(req,res) => {
+    console.log('req',req)
+    try {
+        const LatestTournament = await latestTournament.find({});
+        if(LatestTournament.length===0) return res.status(400).send({
+            success: false,
+            message: 'Latest Tournament Not set'
+        })
+
+        const Tournament = await tournament.findById(LatestTournament[0].tournament._id).populate('teams');
+
+        if(!Tournament) return res.status(404).send({
+            success: false,
+            message: 'Tournament Not found'
+        })
+
+        return res.status(200).send({
+            success: true,
+            teams: Tournament.teams
+        })
     } catch (error) {
         console.log(error)
         return res.status(500).send({

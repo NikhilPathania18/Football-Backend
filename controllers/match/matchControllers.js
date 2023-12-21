@@ -1,6 +1,8 @@
+import { getLatestTournamentId } from "../../helpers/latestTournament.js";
 import match from "../../models/Match.js";
 import player from "../../models/Player.js";
 import team from "../../models/Team.js";
+import tournament from "./../../models/Tournament.js";
 import tournamentModel from './../../models/Tournament.js';
 
 const decorateTime = (time) => {
@@ -643,3 +645,40 @@ export const deleteMatch = async (req, res) => {
     });
   }
 };
+
+export const getLatestTournamentMatches = async(req,res) => {
+  try {
+    const tournamentId = await getLatestTournamentId();
+
+    console.log('t id', tournamentId)
+    if(!tournamentId) return res.status(500).send({
+      success: false,
+      message: 'Failed to get matches list'
+    })
+
+    const Tournament = await tournament.findById(tournamentId).populate({
+      path: 'matches',
+      populate:[{
+        path: 'teamA'
+      },{
+        path: 'teamB'
+      }]
+    })
+
+    if(!Tournament) return res.status(404).send({
+      success: false,
+      message: 'Tournament Not Found'
+    })
+
+    return res.status(200).send({
+      success: true,
+      matches: Tournament.matches
+    })
+  } catch (error) {
+    console.log(error)
+    return res.status(500).send({
+      success: false,
+      message: 'Internal server error'
+    })
+  }
+}
