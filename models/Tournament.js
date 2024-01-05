@@ -56,6 +56,7 @@ const tournamentSchema = new Schema({
         {
           team: {
             type: mongoose.Schema.Types.ObjectId,
+            ref: 'team'
           },
           matches: {
             type: Number,
@@ -100,6 +101,14 @@ const tournamentSchema = new Schema({
   numberOfMatches: {
     type: Number,
     default: 0,
+  },
+  yellowCards:{
+    type: Number,
+    default: 0
+  },
+  redCards:{
+    type: Number,
+    default: 0
   },
   mostGoals: {
     type: Map,

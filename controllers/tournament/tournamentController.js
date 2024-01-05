@@ -1,5 +1,6 @@
 import tournament from "../../models/Tournament.js";
 import latestTournament from "../../models/LatestTournament.js";
+import { getLatestTournamentId } from "../../helpers/latestTournament.js";
 export const createTournament = async (req, res) => {
   try {
     const { type, startYear, endYear, name, schedule, teams, status } =
@@ -322,20 +323,28 @@ export const getLatestTournament = async (req, res) => {
   try {
     const LatestTournament = await latestTournament.find({}).populate({
       path: "tournament",
-      populate: [{
-        path: "teams",
-        populate: {
-            path: "players"
+      populate: [
+        {
+          path: "teams",
+          populate: {
+            path: "players",
+          },
+        },
+        {
+          path: "matches",
+          populate: [
+            {
+              path: "teamA",
+            },
+            {
+              path: "teamB",
+            },
+          ],
+        },
+        {
+          path: "pointsTable.teamStats.team"  
         }
-      },
-    {
-        path: "matches",
-        populate:[{
-            path: "teamA"
-        },{
-            path:"teamB"
-        }]
-    }],
+      ],
     });
 
     if (LatestTournament.length === 0)
@@ -356,3 +365,107 @@ export const getLatestTournament = async (req, res) => {
     });
   }
 };
+
+export const putTeamsInGroup = async (req, res) => {
+  try {
+    const { id, groups } = req.body;
+
+    if (!id)
+      return res.status(400).send({
+        success: false,
+        message: "Touranament Id not present",
+      });
+
+    const Tournament = await tournament.findByIdAndUpdate(id,
+      { $set: { numberOfGroups: groups.length, pointsTable: [] } }, // Update numberOfGroups and reset pointsTable
+      { new: true }
+    );
+
+    if (!Tournament)
+      return res.status(404).send({
+        success: false,
+        message: "Tournament Not Found",
+      });
+
+    Tournament.numberOfGroups = groups.length;
+
+    let groupLength = groups.length;
+
+    for (let groupNo = 0; groupNo < groupLength; groupNo++) {
+      let groupDetails = {
+        title: groups[groupNo].title,
+        teamStats: [],
+      };
+      let teams = groups[groupNo].teams;
+
+      for (let teamNo = 0; teamNo < teams.length; teamNo++) {
+        let teamDetails = {
+          team: teams[teamNo],
+          matches: 0,
+          win: 0,
+          lost: 0,
+          draw: 0,
+          gf: 0,
+          ga: 0,
+          yellowCards: 0,
+          points: 0,
+        };
+        groupDetails.teamStats.push(teamDetails);
+      }
+      Tournament.pointsTable.push(groupDetails);
+    }
+
+    console.log("Tournament points Table:", Tournament.pointsTable);
+
+    let data = await Tournament.save()
+
+    const populatedTournament = await tournament.populate(data, {
+      path: "pointsTable.teamStats.team",
+      model: "team",
+    });
+
+    return res.status(200).send({
+      success: true,
+      message: "Teams added into the groups",
+      populatedTournament,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export const getLatestTournamentDetails = async(req,res) => {
+  try {
+    const id = await getLatestTournamentId();
+
+    if(!id) return res.status(500).send({
+      success: false,
+      message: 'Internal Server Error'
+    })
+
+    const Tournament = await tournament.findById(id).populate({
+      path: 'pointsTable.teamStats.team',
+      model: 'team'
+    });
+
+    if(!Tournament) return res.status(400).send({
+      success: false,
+      message: 'Latest Tournament Not Set'
+    })
+
+    return res.status(200).send({
+      success: true,
+      Tournament
+    })
+
+  } catch (error) {
+    return res.status(500).send({
+      success: false,
+      message: 'Internal Server Error'
+    })
+  }
+}

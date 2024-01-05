@@ -51,7 +51,7 @@ const matchSchema = new Schema({
         type: [{
             type:{
                 type: String,
-                enum: ['goal','yellowCard','redCard','penaltyMissed']
+                enum: ['goal','yellowCard','redCard','penaltyMissed', 'secondYellow']
             },
             time:{
                 type: String
@@ -78,7 +78,7 @@ const matchSchema = new Schema({
         type: [{
             type:{
                 type: String,
-                enum: ['goal','yellowCard','redCard','penaltyMissed']
+                enum: ['goal','yellowCard','redCard','penaltyMissed','secondYellow']
             },
             time:{
                 type: String

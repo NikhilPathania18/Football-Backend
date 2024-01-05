@@ -125,6 +125,13 @@ export const endMatch = async (req, res) => {
       });
     }
 
+    if(matchDetails.status==='ended'){
+      return res.status(400).send({
+        success: false,
+        message: 'Match has already ended'
+      });
+    }
+
     //find winner of match
     if (matchDetails.teamAScore > matchDetails.teamBScore)
       matchDetails.winner = "A";
@@ -136,7 +143,7 @@ export const endMatch = async (req, res) => {
       else matchDetails.winner = "B";
     } else matchDetails.winner = "draw";
 
-    //increase stats of teams
+    //update stats of teams
     const teamA = await team.findById(matchDetails.teamA);
     const teamB = await team.findById(matchDetails.teamB);
 
@@ -195,7 +202,7 @@ export const endMatch = async (req, res) => {
         }
       } else if (event.type === "yellowCard") {
         Player.yellowCards++;
-      } else if (event.type === "redCard") {
+      } else if (event.type === "redCard"||event.type === 'secondYellow') {
         Player.redCards++;
       }
 
@@ -211,6 +218,28 @@ export const endMatch = async (req, res) => {
     await matchDetails.save();
 
     await Promise.all(updatePromises);
+
+
+    //update Tournament Stats here
+    const tournamentId = matchDetails.tournament;
+
+    const Tournament = await tournament.findById(tournamentId);
+
+    Tournament.numberOfMatches++;
+
+    [...teamAEvents,...teamBEvents].forEach(event => {
+      if(event.type === 'goal'){
+        Tournament.numberOfGoals++;
+      }else if(event.type === 'yellowCard'){
+        Tournament.yellowCards++;
+      }else if(event.type === 'redCard'||event.type === 'secondYellow'){
+        Tournament.redCards++;
+      }
+    });
+
+
+    
+
 
     return res.status(200).send({
       success: true,
