@@ -469,3 +469,64 @@ export const getLatestTournamentDetails = async(req,res) => {
     })
   }
 }
+
+export const getTournamentStats = async(req,res) => {
+  try {
+    const {id} = req.params
+
+    if(!id) return res.status(400).send({success: false, message: 'Tournament Id not present'})
+
+    const Tournament = tournament.findById(id);
+
+    if(!Tournament) return res.status(404).send({success: false, message: 'Tournament Not Found'})
+
+    let tournamentStats = {
+      matches: 0,
+      goals: 0,
+      goalsConceeded: 0,
+      yellowCards: 0,
+      redCards: 0,
+      teams
+    }
+    
+
+    let number_of_groups = Tournament.pointsTable || 0
+
+    for(let i = 0 ; i<number_of_groups ; i++){
+      let group = Tournament.pointsTable[i];
+
+      let number_of_teams = group.teamStats.length;
+
+      for(let j = 0 ; j<number_of_teams ; j++){
+        let team_details = group.teamStats[j];
+
+        tournamentStats.teams++;
+        tournamentStats.matches+=team_details.matches;
+        tournamentStats.goals+=team_details.gf;
+        tournamentStats.goalsConceeded+=team_details.ga;
+        tournamentStats.yellowCards+=team_details.yellowCards;
+        tournamentStats.redCards+=team_details.redCards;
+      }
+
+    }
+
+    let teamStats = [
+      {logo: '', name: '', gf: '', gc: ''}
+    ]
+    
+    let number_of_matches = Tournament.matches.length;
+
+    for(let matchNo = 0; matchNo<number_of_matches; matchNo++){
+      const match = Tournament.matches[matchNo];
+      
+
+    }
+
+
+  } catch (error) {
+    return res.status(500).send({
+      success: false,
+      message: 'Internal Server Error'
+    })
+  }
+}

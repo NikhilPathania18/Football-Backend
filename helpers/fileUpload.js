@@ -20,7 +20,7 @@ aws.config.update({
 });
 
 let uploadFile = async (file, rollNo) => {
-  console.log('file',file)
+  console.log('file is ', file)
   if(!file) return;
   return new Promise(function (resolve, reject) {
     // this function will upload file to aws and return the link
@@ -45,7 +45,7 @@ let uploadFile = async (file, rollNo) => {
 };
 
 const uploadFileCloudinary = async(file) => {
-
+    if(!file) return;
     const parser = new DataUriParser();
     const extName = path.extname(file.originalname).toString();
     const dataUri =  parser.format(extName, file.buffer)

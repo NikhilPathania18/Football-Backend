@@ -48,7 +48,8 @@ export const createPlayer = async(req,res) => {
 
 export const updatePlayer = async(req,res) => {
     try {
-        const {name, rollNo, branch, startYear, endYear, position,photo} = req.body;
+        console.log('req body', req.body)
+        const {name, rollNo, branch, startYear, endYear, position, goals, assists, yellowCards, redCards, matches} = req.body;
         const id = req.params.id;
         const image = req.file;
         const Player = await player.findById(id);
@@ -59,19 +60,28 @@ export const updatePlayer = async(req,res) => {
                 message: 'Player not found'
             })
         }
+        console.log(name, typeof name);
+        console.log(rollNo, typeof rollNo);
+        console.log(startYear, typeof startYear);
+        console.log(endYear, typeof endYear);
 
-        if(name)    Player.name = name;
-        if(rollNo)  Player.rollNo = rollNo;
-        if(branch)  Player.branch = branch;
-        if(startYear)   Player.startYear = startYear;
-        if(endYear)     Player.endYear = endYear;
-        if(position)    Player.position = position;
+        if(name && name !== 'undefined')    Player.name = name
+        if(rollNo && rollNo !== 'undefined')  Player.rollNo = rollNo;
+        if(branch&& branch !== 'undefined')  Player.branch = branch;
+        if(startYear && startYear !== 'undefined')   Player.startYear = startYear;
+        if(endYear && endYear !== 'undefined')     Player.endYear = endYear;
+        if(position && position !== 'undefined')    Player.position = position;
+        if(goals && goals !== 'undefined')    Player.goals = goals;
+        if(assists && assists !== 'undefined')    Player.assists = assists;
+        if(yellowCards && yellowCards !== 'undefined')    Player.yellowCards = yellowCards;
+        if(redCards && redCards !== 'undefined')    Player.redCards = redCards;
+        if(matches && matches !== 'undefined')  Player.matches = matches
         const imageUrl = await uploadFile(image,rollNo)
 
         if(imageUrl)
         Player.image = imageUrl
 
-        Player.save();
+        await Player.save();
         
         return res.status(200).send({
             success: true,
@@ -173,3 +183,65 @@ export const deletePlayer = async(req,res) => {
         })
     }
 }
+
+export const getPlayersWithMostGoals = async(req,res) => {
+    try {
+        const playerList = await player.find({}).sort({goals: -1, assists: -1, matches: 1}).limit(100);
+
+        return res.status(200).send({
+            success: true,
+            playerList
+        })
+    } catch (error) {
+        return res.status(500).send({
+            success: false,
+            message: 'Internal Server Error'
+        })
+    }
+}
+
+export const getPlayersWithMostAssists = async(req,res) => {
+    try {
+        const playerList = await player.find({}).sort({assists: -1, goals: -1, matches: 1}).limit(100);
+        return res.status(200).send({
+            success: true,
+            playerList
+        })
+    } catch (error) {
+        return res.status(500).send({
+            success: false,
+            message: 'Internal Server Error'
+        })
+    }
+}
+
+export const getPlayersWithMostYellowCards = async(req,res) => {
+    try {
+        const playerList = (await player.find({}).sort({yellowCards: -1, redCards: -1, matches: 1})).limit(100)
+        return res.status(200).send({
+            success: true,
+            playerList
+        })
+    } catch (error) {
+        return res.status(500).send({
+            success: false,
+            message: 'Internal Server Error'
+        })
+    }
+}
+
+export const getPlayersWithMostRedCards = async(req,res) => {
+    try {
+        const playerList = await player.find({}).sort({redCards: -1, yellowCards: -1, matches: 1}).limit(100)
+        return res.status(200).send({
+            success: true,
+            playerList
+        })
+    } catch (error) {
+        return res.status(500).send({
+            success: false,
+            message: 'Internal Server Error'
+        })
+    }
+}
+
