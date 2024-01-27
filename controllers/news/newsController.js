@@ -1,6 +1,7 @@
 import uploadFile from "../../helpers/fileUpload.js";
 import newsModel from "../../models/News.js";
 import mainNews from "../../models/MainNews.js";
+import news from "../../models/News.js";
 
 const newNews = async (req, res) => {
   try {
@@ -173,4 +174,19 @@ export const getNewsById = async(req,res) => {
   }
 }
 
+export const getAllNews = async(req,res) => {
+  try {
+    const News = await news.find({});
+
+    return res.status(200).send({
+      success: true,
+      news : News
+    })
+  } catch (error) {
+    return res.status(500).send({
+      success: false,
+      message: 'Internal Server Error'
+    })
+  }
+}
 export {newNews, setMainNews, deleteNews, getTopNews}
