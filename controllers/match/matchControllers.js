@@ -93,12 +93,12 @@ export const newMatch = async (req, res) => {
       teamBPenalties,
       isKnockout: isKnockout?isKnockout:false,
       status: status ? status : "upcoming",
-      time: decoratedTime
+      time
     });
 
     Tournament.matches.push(matchDetails._id);
     await Tournament.save();
-
+ 
     
     return res.status(200).send({
       success: true,
