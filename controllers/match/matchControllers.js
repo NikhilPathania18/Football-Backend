@@ -93,6 +93,7 @@ export const newMatch = async (req, res) => {
       teamBPenalties,
       isKnockout: isKnockout?isKnockout:false,
       status: status ? status : "upcoming",
+      time: decoratedTime
     });
 
     Tournament.matches.push(matchDetails._id);

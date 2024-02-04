@@ -282,7 +282,7 @@ export const getTeamList = async (req, res) => {
 export const setLatestTournament = async (req, res) => {
   try {
     const { id } = req.params;
-
+    console.log('req recieved', id)
     if (!id)
       return res.status(400).send({
         success: false,
@@ -299,11 +299,12 @@ export const setLatestTournament = async (req, res) => {
 
     const LatestTournament = await latestTournament.find({});
 
+    console.log('latest tournament ', LatestTournament)
     if (LatestTournament.length === 0) {
       await latestTournament.create({ tournament: id });
     } else {
       LatestTournament[0].tournament = id;
-      await LatestTournament.save();
+      await LatestTournament[0].save();
     }
 
     return res.status(200).send({
