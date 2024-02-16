@@ -531,3 +531,88 @@ export const getTournamentStats = async(req,res) => {
     })
   }
 }
+
+export const getLatestTournamentStats = async(req,res)=>{
+  try {
+    const LatestTournament = await latestTournament.find({}).populate({
+      path: "tournament",
+      populate: [
+        {
+          path: "teams",
+          populate: {
+            path: "players",
+          },
+        },
+        {
+          path: "matches",
+          populate: [
+            {
+              path: "teamA",
+            },
+            {
+              path: "teamB",
+            },
+          ],
+        },
+        {
+          path: "pointsTable.teamStats.team"  
+        },
+        {
+          path: "mostGoals",
+          populate: [
+            {
+              path: "player"
+            }
+          ]
+        },
+        {
+          path: "mostAssists",
+          populate: [
+            {
+              path: "player"
+            }
+          ]
+        },
+        {
+          path: "mostYellow",
+          populate: [
+            {
+              path: "player"
+            }
+          ]
+        },
+        {
+          path: "mostRed",
+          populate: [
+            {
+              path: "player"
+            }
+          ]
+        }
+      ],
+    });
+
+    let tournamentStats = {
+      goals: 0,
+      teams: 0,
+      matches: 0,
+      yellowCards: 0,
+      redCards: 0,
+      mostGoals: LatestTournament[0].tournament.mostGoals,
+      mostAssists: LatestTournament[0].tournament.mostAssists,
+      mostRed: LatestTournament[0].tournament.mostRed,
+      mostYellow: LatestTournament[0].tournament.mostYellow
+    }
+
+    return res.status(200).send({
+      success: true,
+      tournamentStats
+    })
+  } catch (error) {
+    console.log(error)
+    return res.status(500).send({
+      success: false,
+      message: 'Internal Server Error'
+    })
+  }
+}
