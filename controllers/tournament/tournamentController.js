@@ -1,6 +1,7 @@
 import tournament from "../../models/Tournament.js";
 import latestTournament from "../../models/LatestTournament.js";
 import { getLatestTournamentId } from "../../helpers/latestTournament.js";
+import { resize } from "../../helpers/resizeArray.js";
 export const createTournament = async (req, res) => {
   try {
     const { type, startYear, endYear, name, schedule, teams, status } =
@@ -592,21 +593,27 @@ export const getLatestTournamentStats = async(req,res)=>{
       ],
     });
 
+    let matchesCount = 0
+
+    LatestTournament[0].tournament.matches.forEach((match)=>{
+      if(match.status==="ended")  matchesCount++;
+    })
     let tournamentStats = {
-      goals: 0,
-      teams: 0,
-      matches: 0,
-      yellowCards: 0,
-      redCards: 0,
-      mostGoals: LatestTournament[0].tournament.mostGoals,
-      mostAssists: LatestTournament[0].tournament.mostAssists,
-      mostRed: LatestTournament[0].tournament.mostRed,
-      mostYellow: LatestTournament[0].tournament.mostYellow
+      goals: LatestTournament[0].tournament.numberOfGoals,
+      teams: LatestTournament[0].tournament.teams.length,
+      matches: matchesCount,
+      yellowCards: LatestTournament[0].tournament.yellowCards,
+      redCards: LatestTournament[0].tournament.redCards,
+      mostGoals: resize(LatestTournament[0].tournament.mostGoals, 5) ,
+      mostAssists: resize(LatestTournament[0].tournament.mostAssists, 5) ,
+      mostRed: resize(LatestTournament[0].tournament.mostRed, 5) ,
+      mostYellow: resize(LatestTournament[0].tournament.mostYellow, 5) 
     }
 
     return res.status(200).send({
       success: true,
-      tournamentStats
+      tournamentStats,
+      LatestTournament
     })
   } catch (error) {
     console.log(error)

@@ -229,6 +229,9 @@ export const endMatch = async (req, res) => {
 
     Tournament.numberOfMatches++;
 
+    Tournament.numberOfGoals += matchDetails.teamAScore;
+    Tournament.numberOfGoals += matchDetails.teamBScore;
+
     [...teamAEvents,...teamBEvents].forEach(event => {
       if(event.type === 'goal'){
         Tournament.numberOfGoals++;
