@@ -114,12 +114,46 @@ const tournamentSchema = new Schema({
     type: Number,
     default: 0
   },
-  mostGoals: {
-    type: Map,
-  },
-  mostAssists: {
-    type: Map,
-  },
+  mostGoals: [{
+    player: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'player'
+    },
+    count: {
+      type: Number,
+      default: 0
+    }
+  }],
+  mostAssists: [{
+    player: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'player'
+    },
+    count: {
+      type: Number,
+      default: 0
+    }
+  }],
+  mostYellow: [{
+    player: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'player'
+    },
+    count: {
+      type: Number,
+      default: 0
+    }
+  }],
+  mostRed: [{
+    player: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'player'
+    },
+    count:{
+      type:Number,
+    }
+  }],
+  
 });
 
 const tournament = mongoose.model("tournament", tournamentSchema);

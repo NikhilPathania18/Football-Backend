@@ -1,4 +1,5 @@
 import { getLatestTournamentId } from "../../helpers/latestTournament.js";
+import { increaseStat } from "../../helpers/updateStats.js";
 import match from "../../models/Match.js";
 import player from "../../models/Player.js";
 import team from "../../models/Team.js";
@@ -231,14 +232,24 @@ export const endMatch = async (req, res) => {
     [...teamAEvents,...teamBEvents].forEach(event => {
       if(event.type === 'goal'){
         Tournament.numberOfGoals++;
+        if(event.goalType!=='ownGoal')
+        Tournament.mostGoals = increaseStat(Tournament.mostGoals, event.player)
+
+        if(event.assist){
+          Tournament.mostAssists = increaseStat(Tournament.mostAssists, event.assist)
+        }
       }else if(event.type === 'yellowCard'){
         Tournament.yellowCards++;
+        Tournament.mostYellow = increaseStat(Tournament.mostYellow, event.player)
       }else if(event.type === 'redCard'||event.type === 'secondYellow'){
         Tournament.redCards++;
+        const arr = increaseStat(Tournament.mostRed, event.player)
+        Tournament.mostRed = arr
       }
     });
 
 
+    await Tournament.save();
     
 
 
@@ -247,6 +258,7 @@ export const endMatch = async (req, res) => {
       message: "Match ended",
     });
   } catch (error) {
+    console.log(error)
     return res.status(500).send({
       success: false,
       message: "Internal Server Error",

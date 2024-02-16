@@ -1,13 +1,14 @@
 import express from 'express'
 import { deleteNews, getAllNews, getNewsById, getTopNews, newNews, setMainNews } from '../controllers/news/newsController.js';
 import multer from 'multer'
+import { isValidUser } from '../middlewares/isValidUser.js';
 const router = express.Router();
 const upload = multer();
 
 
 router.post('/new-news',upload.single('image'),newNews);
 
-router.get('/all', getAllNews)
+router.get('/all',isValidUser, getAllNews)
 
 router.get('/', getTopNews)
 
