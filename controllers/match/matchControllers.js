@@ -234,7 +234,7 @@ export const endMatch = async (req, res) => {
 
     [...teamAEvents,...teamBEvents].forEach(event => {
       if(event.type === 'goal'){
-        Tournament.numberOfGoals++;
+        // Tournament.numberOfGoals++;
         if(event.goalType!=='ownGoal')
         Tournament.mostGoals = increaseStat(Tournament.mostGoals, event.player)
 
