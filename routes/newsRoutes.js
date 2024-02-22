@@ -8,7 +8,7 @@ const upload = multer();
 
 router.post('/new-news',upload.single('image'),newNews);
 
-router.get('/all',isValidUser, getAllNews)
+router.get('/all', getAllNews)
 
 router.get('/', getTopNews)
 
