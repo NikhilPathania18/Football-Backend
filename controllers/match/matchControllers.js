@@ -727,3 +727,75 @@ export const getLatestTournamentMatches = async(req,res) => {
     })
   }
 }
+
+export const addPenalty = async(req,res) => {
+  try {
+    const {id} = req.params
+    const {team} = req.body;
+
+    const Match = await match.findById(id)
+
+    if(!Match){
+      return res.status(400).send({
+        success: false,
+        message: 'Match not found'
+      })
+    }
+
+    if(team==='A'){
+      Match.teamAPenalties++;
+    }else{
+      Match.teamBPenalties++;
+    }
+
+    await Match.save();
+
+    return res.status(200).send({
+      success: true,
+      message: 'Penalty added'
+    })
+  } catch (error) {
+    console.log(error)
+    return res.status(500).send({
+      success: false,
+      message: 'Internal Server Error'
+    })
+  }
+}
+
+export const removePenalty = async(req,res) => {
+  try {
+    const {id} = req.params
+    const {team} = req.body;
+
+    const Match = await match.findById(id)
+
+    if(!Match){
+      return res.status(400).send({
+        success: false,
+        message: 'Match not found'
+      })
+    }
+
+    if(team==='A'){
+      Match.teamAPenalties--;
+      if(Match.teamAPenalties<0)  Match.teamAPenalties = 0;
+    }else{
+      Match.teamBPenalties--;
+      if(Match.teamBPenalties<0)  Match.teamBPenalties = 0;
+    }
+
+    await Match.save();
+
+    return res.status(200).send({
+      success: true,
+      message: 'Penalty removed'
+    })
+  } catch (error) {
+    console.log(error)
+    return res.status(500).send({
+      success: false,
+      message: 'Internal Server Error'
+    })
+  }
+}
