@@ -4,31 +4,30 @@ import match from "../../models/Match.js";
 import player from "../../models/Player.js";
 import team from "../../models/Team.js";
 import tournament from "./../../models/Tournament.js";
-import tournamentModel from './../../models/Tournament.js';
+import tournamentModel from "./../../models/Tournament.js";
 
 const decorateTime = (time) => {
   let hours, minutes;
 
-  time = time.split(' ')
+  time = time.split(" ");
 
-  console.log('time' , time)
-  if(time[1]!="AM"&&time[1]!="PM")  return false;
+  console.log("time", time);
+  if (time[1] != "AM" && time[1] != "PM") return false;
 
-  minutes = Number(time[0].split(':')[1])
-  hours = Number(time[0].split(":")[0])
+  minutes = Number(time[0].split(":")[1]);
+  hours = Number(time[0].split(":")[0]);
 
-  if(time[1]=="PM") hours+=12;
+  if (time[1] == "PM") hours += 12;
 
-  if(hours==24) hours = 0;
-  if(minutes == 60) minutes = 0;
+  if (hours == 24) hours = 0;
+  if (minutes == 60) minutes = 0;
 
-  if(hours>=24||minutes>=60)  return false;
+  if (hours >= 24 || minutes >= 60) return false;
 
-  return {hours,minutes};
-}
+  return { hours, minutes };
+};
 
-
-console.log(decorateTime("23:30 PM"))
+console.log(decorateTime("23:30 PM"));
 export const newMatch = async (req, res) => {
   try {
     const {
@@ -51,7 +50,7 @@ export const newMatch = async (req, res) => {
       teamBPenalties,
       status,
       isKnockout,
-      time
+      time,
     } = req.body;
 
     if (!tournament || !teamA || !teamB || !date || !halfLength || !time) {
@@ -62,23 +61,26 @@ export const newMatch = async (req, res) => {
     }
     const decoratedTime = decorateTime(time);
 
-    if(!decoratedTime)  return res.status(400).send({
-      success: false,
-      message: 'Invalid Time'
-    })
+    if (!decoratedTime)
+      return res.status(400).send({
+        success: false,
+        message: "Invalid Time",
+      });
 
-    
     const Tournament = await tournamentModel.findById(tournament);
-    if(!Tournament) return res.status(404).send({
-      success: false,
-      message: 'Tournament Not Found'
-    })
+    if (!Tournament)
+      return res.status(404).send({
+        success: false,
+        message: "Tournament Not Found",
+      });
 
     const matchDetails = await match.create({
       tournament,
       matchNumber,
       matchName,
-      date: new Date(`${date} ${decoratedTime.hours}:${decoratedTime.hours}:${decoratedTime.minutes}:00`),
+      date: new Date(
+        `${date} ${decoratedTime.hours}:${decoratedTime.hours}:${decoratedTime.minutes}:00`
+      ),
       venue,
       halfLength,
       extraTimeHalfLength,
@@ -92,15 +94,14 @@ export const newMatch = async (req, res) => {
       teamBScore,
       teamAPenalties,
       teamBPenalties,
-      isKnockout: isKnockout?isKnockout:false,
+      isKnockout: isKnockout ? isKnockout : false,
       status: status ? status : "upcoming",
-      time
+      time,
     });
 
     Tournament.matches.push(matchDetails._id);
     await Tournament.save();
- 
-    
+
     return res.status(200).send({
       success: true,
       message: "Match created successfully",
@@ -221,11 +222,17 @@ export const endMatch = async (req, res) => {
 
     await Promise.all(updatePromises);
 
-
-    //update Tournament Stats here
     const tournamentId = matchDetails.tournament;
 
-    const Tournament = await tournament.findById(tournamentId);
+    const Tournament = await tournament.findById(tournamentId).populate({
+      path: "pointsTable",
+      populate: {
+        path: "teamStats",
+        populate: {
+          path: "team",
+        },
+      },
+    });
 
     Tournament.numberOfMatches++;
 
@@ -251,17 +258,88 @@ export const endMatch = async (req, res) => {
       }
     });
 
+    //update points table
+    if (!matchDetails.isKnockout) {
+      let pointsTable = Tournament.pointsTable;
+
+      for (let groupNo = 0; groupNo < pointsTable.length; groupNo++) {
+        let group_details = pointsTable[groupNo];
+        for (
+          let team_number = 0;
+          team_number < group_details.teamStats.length;
+          team_number++
+        ) {
+          let team_details = group_details.teamStats[team_number];
+          // console.log(team_details.team._id, matchDetails.teamA._id, typeof team_details.team._id, typeof matchDetails.teamA._id);
+          if (team_details.team._id.toString() == matchDetails.teamA.toString()) {
+            team_details.matches++;
+
+            if (matchDetails.teamAScore > matchDetails.teamBScore) {
+              team_details.win++;
+              team_details.points += 3;
+            } else if (matchDetails.teamAScore == matchDetails.teamBScore) {
+              team_details.draw++;
+              team_details.points++;
+            } else team_details.lost++;
+
+            team_details.gf += matchDetails.teamAScore;
+            team_details.ga += matchDetails.teamBScore;
+
+            //update stats for cards
+            let redCards = 0,
+              yellowCards = 0;
+
+              console.log('events', matchDetails.teamAEvents)
+
+            matchDetails.teamAEvents.forEach((event) => {
+              if (event.type == "yellowCard") yellowCards++;
+              if (event.type == "redCard" || event.type == "secondYellow") redCards++;
+            });
+
+            team_details.yellowCards += yellowCards;
+            team_details.redCards += redCards;
+
+            console.log('yellow cards', yellowCards)
+          } else if (team_details.team._id.toString() == matchDetails.teamB.toString()) {
+            team_details.matches++;
+
+            if (matchDetails.teamBScore > matchDetails.teamAScore) {
+              team_details.win++;
+              team_details.points += 3;
+            } else if (matchDetails.teamAScore == matchDetails.teamBScore) {
+              team_details.draw++;
+              team_details.points++;
+            } else team_details.lost++;
+
+            team_details.gf += matchDetails.teamBScore;
+            team_details.ga += matchDetails.teamAScore;
+
+            //update stats for cards
+            let redCards = 0,
+              yellowCards = 0;
+
+            matchDetails.teamBEvents.forEach((event) => {
+              if (event.type == "yellowCard") yellowCards++;
+              if (event.type == "redCard" || event.type == "secondYellow") redCards++;
+            });
+
+            team_details.yellowCards += yellowCards;
+            team_details.redCards += redCards;
+          }
+        }   
+      }
+    }
+
 
     await Tournament.save();
-    
-
 
     return res.status(200).send({
       success: true,
+      a: Tournament,
       message: "Match ended",
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).send({
       success: false,
       message: "Internal Server Error",
@@ -321,47 +399,52 @@ export const updateScore = async (req, res) => {
 
     Match.status = "ongoing";
 
-    if(!event.time||event.time.length === 0){
+    if (!event.time || event.time.length === 0) {
       const currentStatus = Match.currentStatus;
-      let startTime ;
+      let startTime;
 
-      if(currentStatus==='firstHalf') startTime = Match.firstHalfStartTime
-      else if(currentStatus === 'secondHalf') startTime = Match.secondHalfStartTime;
-      else if(currentStatus === 'extraTimeFirstHalf') startTime = Match.extraTimeFirstHalfStartTime;
-      else if(currentStatus === 'extraTimeSecondHalf')
-      startTime = Match.extraTimeSecondHalfStartTime;
-      
+      if (currentStatus === "firstHalf") startTime = Match.firstHalfStartTime;
+      else if (currentStatus === "secondHalf")
+        startTime = Match.secondHalfStartTime;
+      else if (currentStatus === "extraTimeFirstHalf")
+        startTime = Match.extraTimeFirstHalfStartTime;
+      else if (currentStatus === "extraTimeSecondHalf")
+        startTime = Match.extraTimeSecondHalfStartTime;
+
       let endTime = new Date();
       let timeDiff = endTime - startTime;
       let timeInMinutes = timeDiff / (1000 * 60);
       let updatedTime = Math.ceil(timeInMinutes);
 
-      if(currentStatus==='firstHalf'){
+      if (currentStatus === "firstHalf") {
         if (updatedTime > Match.halfLength)
-        event.time = Match.halfLength + "+" + (updatedTime - Match.halfLength) 
-        else event.time = updatedTime+""
-      }
-      else if(currentStatus === 'secondHalf'){
-        if (updatedTime > Match.halfLength) 
-        event.time = Match.halfLength * 2 + "+" + (updatedTime - Match.halfLength) 
-        else event.time=(Match.halfLength + updatedTime)+""
-      }
-      else if(currentStatus === 'extraTimeFirstHalf'){
-        if (updatedTime > Match.extraTimeHalfLength ) {
-          event.time = 2 * Match.halfLength + Match.extraTimeHalfLength +"+" +(updatedTime - Match.extraTimeHalfLength);
-        }
-        else
-        event.time = 2 * Match.halfLength + updatedTime + ""
-      }
-      else if(currentStatus === 'extraTimeSecondHalf'){
-        if(updatedTime > Match.extraTimeHalfLength){
-          event.time = 2* Match.halfLength + 2*Match.extraTimeHalfLength + "+" (updatedTime - Match.extraTimeHalfLength);
-        }
-        else
-        event.time = 2* Match.halfLength + Match.extraTimeHalfLength + updatedTime + ""
+          event.time =
+            Match.halfLength + "+" + (updatedTime - Match.halfLength);
+        else event.time = updatedTime + "";
+      } else if (currentStatus === "secondHalf") {
+        if (updatedTime > Match.halfLength)
+          event.time =
+            Match.halfLength * 2 + "+" + (updatedTime - Match.halfLength);
+        else event.time = Match.halfLength + updatedTime + "";
+      } else if (currentStatus === "extraTimeFirstHalf") {
+        if (updatedTime > Match.extraTimeHalfLength) {
+          event.time =
+            2 * Match.halfLength +
+            Match.extraTimeHalfLength +
+            "+" +
+            (updatedTime - Match.extraTimeHalfLength);
+        } else event.time = 2 * Match.halfLength + updatedTime + "";
+      } else if (currentStatus === "extraTimeSecondHalf") {
+        if (updatedTime > Match.extraTimeHalfLength) {
+          event.time =
+            2 * Match.halfLength +
+            2 * Match.extraTimeHalfLength +
+            "+"(updatedTime - Match.extraTimeHalfLength);
+        } else
+          event.time =
+            2 * Match.halfLength + Match.extraTimeHalfLength + updatedTime + "";
       }
     }
-
 
     if (team === "A") {
       Match.teamAScore++;
@@ -405,7 +488,7 @@ export const updateEvent = async (req, res) => {
   try {
     const id = req.params.id;
     const { team, event } = req.body;
-    console.log('event',event)
+    console.log("event", event);
 
     const Match = await match.findById(id);
 
@@ -415,44 +498,50 @@ export const updateEvent = async (req, res) => {
         message: "Match not found",
       });
     }
-    if(!event.time||event.time.length === 0){
+    if (!event.time || event.time.length === 0) {
       const currentStatus = Match.currentStatus;
-      let startTime ;
+      let startTime;
 
-      if(currentStatus==='firstHalf') startTime = Match.firstHalfStartTime
-      else if(currentStatus === 'secondHalf') startTime = Match.secondHalfStartTime;
-      else if(currentStatus === 'extraTimeFirstHalf') startTime = Match.extraTimeFirstHalfStartTime;
-      else if(currentStatus === 'extraTimeSecondHalf')
-      startTime = Match.extraTimeSecondHalfStartTime;
-      
+      if (currentStatus === "firstHalf") startTime = Match.firstHalfStartTime;
+      else if (currentStatus === "secondHalf")
+        startTime = Match.secondHalfStartTime;
+      else if (currentStatus === "extraTimeFirstHalf")
+        startTime = Match.extraTimeFirstHalfStartTime;
+      else if (currentStatus === "extraTimeSecondHalf")
+        startTime = Match.extraTimeSecondHalfStartTime;
+
       let endTime = new Date();
       let timeDiff = endTime - startTime;
       let timeInMinutes = timeDiff / (1000 * 60);
       let updatedTime = Math.ceil(timeInMinutes);
 
-      if(currentStatus==='firstHalf'){
+      if (currentStatus === "firstHalf") {
         if (updatedTime > Match.halfLength)
-        event.time = Match.halfLength + "+" + (updatedTime - Match.halfLength) 
-        else event.time = updatedTime+""
-      }
-      else if(currentStatus === 'secondHalf'){
-        if (updatedTime > Match.halfLength) 
-        event.time = Match.halfLength * 2 + "+" + (updatedTime - Match.halfLength) 
-        else event.time=(Match.halfLength + updatedTime)+""
-      }
-      else if(currentStatus === 'extraTimeFirstHalf'){
-        if (updatedTime > Match.extraTimeHalfLength ) {
-          event.time = 2 * Match.halfLength + Match.extraTimeHalfLength +"+" +(updatedTime - Match.extraTimeHalfLength);
-        }
-        else
-        event.time = 2 * Match.halfLength + updatedTime + ""
-      }
-      else if(currentStatus === 'extraTimeSecondHalf'){
-        if(updatedTime > Match.extraTimeHalfLength){
-          event.time = 2* Match.halfLength + 2*Match.extraTimeHalfLength + "+" (updatedTime - Match.extraTimeHalfLength);
-        }
-        else
-        event.time = 2* Match.halfLength + Match.extraTimeHalfLength + updatedTime + ""
+          event.time =
+            Match.halfLength + "+" + (updatedTime - Match.halfLength);
+        else event.time = updatedTime + "";
+      } else if (currentStatus === "secondHalf") {
+        if (updatedTime > Match.halfLength)
+          event.time =
+            Match.halfLength * 2 + "+" + (updatedTime - Match.halfLength);
+        else event.time = Match.halfLength + updatedTime + "";
+      } else if (currentStatus === "extraTimeFirstHalf") {
+        if (updatedTime > Match.extraTimeHalfLength) {
+          event.time =
+            2 * Match.halfLength +
+            Match.extraTimeHalfLength +
+            "+" +
+            (updatedTime - Match.extraTimeHalfLength);
+        } else event.time = 2 * Match.halfLength + updatedTime + "";
+      } else if (currentStatus === "extraTimeSecondHalf") {
+        if (updatedTime > Match.extraTimeHalfLength) {
+          event.time =
+            2 * Match.halfLength +
+            2 * Match.extraTimeHalfLength +
+            "+"(updatedTime - Match.extraTimeHalfLength);
+        } else
+          event.time =
+            2 * Match.halfLength + Match.extraTimeHalfLength + updatedTime + "";
       }
     }
 
@@ -466,7 +555,7 @@ export const updateEvent = async (req, res) => {
       message: "Event added",
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).send({
       success: false,
       message: "Internal Server Error",
@@ -506,7 +595,7 @@ export const startHalf = async (req, res) => {
   try {
     const id = req.params.id;
     const { half } = req.body;
-    console.log('half',half)
+    console.log("half", half);
     const Match = await match.findById(id);
 
     if (!Match) {
@@ -524,8 +613,8 @@ export const startHalf = async (req, res) => {
       Match.extraTimeSecondHalfStartTime = new Date();
 
     Match.currentStatus = half;
-    
-    Match.status = 'ongoing';
+
+    Match.status = "ongoing";
     await Match.save();
 
     return res.status(200).send({
@@ -533,7 +622,7 @@ export const startHalf = async (req, res) => {
       message: "Half Started",
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).send({
       success: false,
       message: "Internal Server Error",
@@ -603,19 +692,19 @@ export const getMatchDetails = async (req, res) => {
       .populate("teamB")
       .populate("playersA")
       .populate("playersB")
-      .populate('tournament')
+      .populate("tournament")
       .populate({
-        path: 'teamAEvents',
-        populate:{
-          path: 'player'
-        }
+        path: "teamAEvents",
+        populate: {
+          path: "player",
+        },
       })
       .populate({
-        path: 'teamBEvents',
-        populate:{
-          path: 'player'
-        }
-      })
+        path: "teamBEvents",
+        populate: {
+          path: "player",
+        },
+      });
 
     if (!Match) {
       return res.status(200).send({
@@ -691,60 +780,65 @@ export const deleteMatch = async (req, res) => {
   }
 };
 
-export const getLatestTournamentMatches = async(req,res) => {
+export const getLatestTournamentMatches = async (req, res) => {
   try {
     const tournamentId = await getLatestTournamentId();
 
-    console.log('t id', tournamentId)
-    if(!tournamentId) return res.status(500).send({
-      success: false,
-      message: 'Failed to get matches list'
-    })
+    console.log("t id", tournamentId);
+    if (!tournamentId)
+      return res.status(500).send({
+        success: false,
+        message: "Failed to get matches list",
+      });
 
     const Tournament = await tournament.findById(tournamentId).populate({
-      path: 'matches',
-      populate:[{
-        path: 'teamA'
-      },{
-        path: 'teamB'
-      }]
-    })
+      path: "matches",
+      populate: [
+        {
+          path: "teamA",
+        },
+        {
+          path: "teamB",
+        },
+      ],
+    });
 
-    if(!Tournament) return res.status(404).send({
-      success: false,
-      message: 'Tournament Not Found'
-    })
+    if (!Tournament)
+      return res.status(404).send({
+        success: false,
+        message: "Tournament Not Found",
+      });
 
     return res.status(200).send({
       success: true,
-      matches: Tournament.matches
-    })
+      matches: Tournament.matches,
+    });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).send({
       success: false,
-      message: 'Internal server error'
-    })
+      message: "Internal server error",
+    });
   }
-}
+};
 
-export const addPenalty = async(req,res) => {
+export const addPenalty = async (req, res) => {
   try {
-    const {id} = req.params
-    const {team} = req.body;
+    const { id } = req.params;
+    const { team } = req.body;
 
-    const Match = await match.findById(id)
+    const Match = await match.findById(id);
 
-    if(!Match){
+    if (!Match) {
       return res.status(400).send({
         success: false,
-        message: 'Match not found'
-      })
+        message: "Match not found",
+      });
     }
 
-    if(team==='A'){
+    if (team === "A") {
       Match.teamAPenalties++;
-    }else{
+    } else {
       Match.teamBPenalties++;
     }
 
@@ -752,50 +846,50 @@ export const addPenalty = async(req,res) => {
 
     return res.status(200).send({
       success: true,
-      message: 'Penalty added'
-    })
+      message: "Penalty added",
+    });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).send({
       success: false,
-      message: 'Internal Server Error'
-    })
+      message: "Internal Server Error",
+    });
   }
-}
+};
 
-export const removePenalty = async(req,res) => {
+export const removePenalty = async (req, res) => {
   try {
-    const {id} = req.params
-    const {team} = req.body;
+    const { id } = req.params;
+    const { team } = req.body;
 
-    const Match = await match.findById(id)
+    const Match = await match.findById(id);
 
-    if(!Match){
+    if (!Match) {
       return res.status(400).send({
         success: false,
-        message: 'Match not found'
-      })
+        message: "Match not found",
+      });
     }
 
-    if(team==='A'){
+    if (team === "A") {
       Match.teamAPenalties--;
-      if(Match.teamAPenalties<0)  Match.teamAPenalties = 0;
-    }else{
+      if (Match.teamAPenalties < 0) Match.teamAPenalties = 0;
+    } else {
       Match.teamBPenalties--;
-      if(Match.teamBPenalties<0)  Match.teamBPenalties = 0;
+      if (Match.teamBPenalties < 0) Match.teamBPenalties = 0;
     }
 
     await Match.save();
 
     return res.status(200).send({
       success: true,
-      message: 'Penalty removed'
-    })
+      message: "Penalty removed",
+    });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).send({
       success: false,
-      message: 'Internal Server Error'
-    })
+      message: "Internal Server Error",
+    });
   }
-}
+};
