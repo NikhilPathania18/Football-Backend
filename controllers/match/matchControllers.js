@@ -1,4 +1,5 @@
 import { getLatestTournamentId } from "../../helpers/latestTournament.js";
+import { calculatePlayerStats } from "../../helpers/playerStats.js";
 import { increaseStat } from "../../helpers/updateStats.js";
 import match from "../../models/Match.js";
 import player from "../../models/Player.js";
@@ -713,9 +714,61 @@ export const getMatchDetails = async (req, res) => {
       });
     }
 
+    const playersWithStatsA = await Promise.all(
+      Match.playersA.map(async (player) => {
+        console.log(player)
+        const stats = await calculatePlayerStats(player._id);
+        return {
+          ...stats,
+        };
+      })
+    );
+    const playersWithStatsB = await Promise.all(
+      Match.playersB.map(async (player) => {
+        const stats = await calculatePlayerStats(player._id);
+        return {
+          ...stats,
+        };
+      })
+    );
+    // console.log(playersWithStatsA) 
+      Match.playersA = [...playersWithStatsA];
+      Match.playersB = [...playersWithStatsB];
+
     return res.status(200).send({
       success: true,
-      matchDetails: Match,
+      matchDetails: {
+        isKnockout: Match.isKnockout,
+        playersPlayedA: Match.playersPlayedA,
+        playersPlayedB: Match.playersPlayedB,
+        startingElevenA: Match.startingElevenA,
+        startingElevenB: Match.startingElevenB,
+        time: Match.time,
+        _id: Match._id,
+        tournament: Match.tournament,
+        venue: Match.venue,
+        matchNumber: Match.matchNumber,
+        matchName: Match.matchName,
+        date: Match.date,
+        currentStatus: Match.currentStatus,
+        halfLength: Match.halfLength,
+        extraTimeHalfLength: Match.extraTimeHalfLength,
+        teamA: Match.teamA,
+        teamB: Match.teamB,
+        teamAEvents: Match.teamAEvents,
+        teamBEvents: Match.teamBEvents,
+        playersA: playersWithStatsA,
+        playersB: playersWithStatsB,
+        teamAScore: Match.teamAScore,
+        teamBScore: Match.teamBScore,
+        teamAPenalties: Match.teamAPenalties,
+        teamBPenalties: Match.teamBPenalties,
+        status: Match.status,
+        winner: Match.winner,
+        firstHalfStartTime: Match.firstHalfStartTime,
+        secondHalfStartTime: Match.secondHalfStartTime,
+        extratimeFirstHalfStartTime: Match.extraTimeFirstHalfStartTime
+      }
     });
   } catch (error) {
     console.log(error);
