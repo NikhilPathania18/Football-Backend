@@ -2,6 +2,8 @@ import tournament from "../../models/Tournament.js";
 import latestTournament from "../../models/LatestTournament.js";
 import { getLatestTournamentId } from "../../helpers/latestTournament.js";
 import { resize } from "../../helpers/resizeArray.js";
+import match from "../../models/Match.js";
+import player from "../../models/Player.js";
 export const createTournament = async (req, res) => {
   try {
     const { type, startYear, endYear, name, schedule, teams, status } =
@@ -283,7 +285,7 @@ export const getTeamList = async (req, res) => {
 export const setLatestTournament = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('req recieved', id)
+    console.log("req recieved", id);
     if (!id)
       return res.status(400).send({
         success: false,
@@ -300,7 +302,7 @@ export const setLatestTournament = async (req, res) => {
 
     const LatestTournament = await latestTournament.find({});
 
-    console.log('latest tournament ', LatestTournament)
+    console.log("latest tournament ", LatestTournament);
     if (LatestTournament.length === 0) {
       await latestTournament.create({ tournament: id });
     } else {
@@ -344,8 +346,8 @@ export const getLatestTournament = async (req, res) => {
           ],
         },
         {
-          path: "pointsTable.teamStats.team"  
-        }
+          path: "pointsTable.teamStats.team",
+        },
       ],
     });
 
@@ -378,7 +380,8 @@ export const putTeamsInGroup = async (req, res) => {
         message: "Touranament Id not present",
       });
 
-    const Tournament = await tournament.findByIdAndUpdate(id,
+    const Tournament = await tournament.findByIdAndUpdate(
+      id,
       { $set: { numberOfGroups: groups.length, pointsTable: [] } }, // Update numberOfGroups and reset pointsTable
       { new: true }
     );
@@ -417,9 +420,7 @@ export const putTeamsInGroup = async (req, res) => {
       Tournament.pointsTable.push(groupDetails);
     }
 
-    console.log("Tournament points Table:", Tournament.pointsTable);
-
-    let data = await Tournament.save()
+    let data = await Tournament.save();
 
     const populatedTournament = await tournament.populate(data, {
       path: "pointsTable.teamStats.team",
@@ -440,47 +441,54 @@ export const putTeamsInGroup = async (req, res) => {
   }
 };
 
-export const getLatestTournamentDetails = async(req,res) => {
+export const getLatestTournamentDetails = async (req, res) => {
   try {
     const id = await getLatestTournamentId();
 
-    if(!id) return res.status(500).send({
-      success: false,
-      message: 'Internal Server Error'
-    })
+    if (!id)
+      return res.status(500).send({
+        success: false,
+        message: "Internal Server Error",
+      });
 
     const Tournament = await tournament.findById(id).populate({
-      path: 'pointsTable.teamStats.team',
-      model: 'team'
+      path: "pointsTable.teamStats.team",
+      model: "team",
     });
 
-    if(!Tournament) return res.status(400).send({
-      success: false,
-      message: 'Latest Tournament Not Set'
-    })
+    if (!Tournament)
+      return res.status(400).send({
+        success: false,
+        message: "Latest Tournament Not Set",
+      });
 
     return res.status(200).send({
       success: true,
-      Tournament
-    })
-
+      Tournament,
+    });
   } catch (error) {
     return res.status(500).send({
       success: false,
-      message: 'Internal Server Error'
-    })
+      message: "Internal Server Error",
+    });
   }
-}
+};
 
-export const getTournamentStats = async(req,res) => {
+export const getTournamentStats = async (req, res) => {
   try {
-    const {id} = req.params
+    const { id } = req.params;
 
-    if(!id) return res.status(400).send({success: false, message: 'Tournament Id not present'})
+    if (!id)
+      return res
+        .status(400)
+        .send({ success: false, message: "Tournament Id not present" });
 
     const Tournament = tournament.findById(id);
 
-    if(!Tournament) return res.status(404).send({success: false, message: 'Tournament Not Found'})
+    if (!Tournament)
+      return res
+        .status(404)
+        .send({ success: false, message: "Tournament Not Found" });
 
     let tournamentStats = {
       matches: 0,
@@ -488,52 +496,44 @@ export const getTournamentStats = async(req,res) => {
       goalsConceeded: 0,
       yellowCards: 0,
       redCards: 0,
-      teams
-    }
-    
+      teams,
+    };
 
-    let number_of_groups = Tournament.pointsTable || 0
+    let number_of_groups = Tournament.pointsTable || 0;
 
-    for(let i = 0 ; i<number_of_groups ; i++){
+    for (let i = 0; i < number_of_groups; i++) {
       let group = Tournament.pointsTable[i];
 
       let number_of_teams = group.teamStats.length;
 
-      for(let j = 0 ; j<number_of_teams ; j++){
+      for (let j = 0; j < number_of_teams; j++) {
         let team_details = group.teamStats[j];
 
         tournamentStats.teams++;
-        tournamentStats.matches+=team_details.matches;
-        tournamentStats.goals+=team_details.gf;
-        tournamentStats.goalsConceeded+=team_details.ga;
-        tournamentStats.yellowCards+=team_details.yellowCards;
-        tournamentStats.redCards+=team_details.redCards;
+        tournamentStats.matches += team_details.matches;
+        tournamentStats.goals += team_details.gf;
+        tournamentStats.goalsConceeded += team_details.ga;
+        tournamentStats.yellowCards += team_details.yellowCards;
+        tournamentStats.redCards += team_details.redCards;
       }
-
     }
 
-    let teamStats = [
-      {logo: '', name: '', gf: '', gc: ''}
-    ]
-    
+    let teamStats = [{ logo: "", name: "", gf: "", gc: "" }];
+
     let number_of_matches = Tournament.matches.length;
 
-    for(let matchNo = 0; matchNo<number_of_matches; matchNo++){
+    for (let matchNo = 0; matchNo < number_of_matches; matchNo++) {
       const match = Tournament.matches[matchNo];
-      
-
     }
-
-
   } catch (error) {
     return res.status(500).send({
       success: false,
-      message: 'Internal Server Error'
-    })
+      message: "Internal Server Error",
+    });
   }
-}
+};
 
-export const getLatestTournamentStats = async(req,res)=>{
+export const getLatestTournamentStatsOld = async (req, res) => {
   try {
     const LatestTournament = await latestTournament.find({}).populate({
       path: "tournament",
@@ -556,70 +556,211 @@ export const getLatestTournamentStats = async(req,res)=>{
           ],
         },
         {
-          path: "pointsTable.teamStats.team"  
+          path: "pointsTable.teamStats.team",
         },
         {
           path: "mostGoals",
           populate: [
             {
-              path: "player"
-            }
-          ]
+              path: "player",
+            },
+          ],
         },
         {
           path: "mostAssists",
           populate: [
             {
-              path: "player"
-            }
-          ]
+              path: "player",
+            },
+          ],
         },
         {
           path: "mostYellow",
           populate: [
             {
-              path: "player"
-            }
-          ]
+              path: "player",
+            },
+          ],
         },
         {
           path: "mostRed",
           populate: [
             {
-              path: "player"
-            }
-          ]
-        }
+              path: "player",
+            },
+          ],
+        },
       ],
     });
 
-    let matchesCount = 0
+    let matchesCount = 0;
 
-    LatestTournament[0].tournament.matches.forEach((match)=>{
-      if(match.status==="ended")  matchesCount++;
-    })
+    LatestTournament[0].tournament.matches.forEach((match) => {
+      if (match.status === "ended") matchesCount++;
+    });
     let tournamentStats = {
       goals: LatestTournament[0].tournament.numberOfGoals,
       teams: LatestTournament[0].tournament.teams.length,
       matches: matchesCount,
       yellowCards: LatestTournament[0].tournament.yellowCards,
       redCards: LatestTournament[0].tournament.redCards,
-      mostGoals: resize(LatestTournament[0].tournament.mostGoals, 5) ,
-      mostAssists: resize(LatestTournament[0].tournament.mostAssists, 5) ,
-      mostRed: resize(LatestTournament[0].tournament.mostRed, 5) ,
-      mostYellow: resize(LatestTournament[0].tournament.mostYellow, 5) 
-    }
+      mostGoals: resize(LatestTournament[0].tournament.mostGoals, 5),
+      mostAssists: resize(LatestTournament[0].tournament.mostAssists, 5),
+      mostRed: resize(LatestTournament[0].tournament.mostRed, 5),
+      mostYellow: resize(LatestTournament[0].tournament.mostYellow, 5),
+    };
 
     return res.status(200).send({
       success: true,
       tournamentStats,
-      LatestTournament
-    })
+      LatestTournament,
+    });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).send({
       success: false,
-      message: 'Internal Server Error'
-    })
+      message: "Internal Server Error",
+    });
   }
-}
+};
+
+export const getLatestTournamentStats = async (req, res) => {
+  try {
+    const LatestTournament = await latestTournament.find({}).populate('tournament');
+
+    // Step 1: Find all matches related to the tournament
+    const matches = await match
+      .find({ tournament: LatestTournament[0].tournament })
+      .populate(
+        "teamAEvents.player teamAEvents.assist teamBEvents.player teamBEvents.assist"
+      );
+
+    // Initialize variables for calculating stats
+    let totalGoals = 0;
+    let totalMatches = matches.length;
+    let totalYellowCards = 0;
+    let totalRedCards = 0;
+
+    // Create maps to track player stats for most goals, assists, yellow cards, and red cards
+    const goalsMap = new Map();
+    const assistsMap = new Map();
+    const yellowCardsMap = new Map();
+    const redCardsMap = new Map();
+
+    
+    // Step 2: Iterate through all matches and aggregate stats
+    matches.forEach((m) => {
+      // Process events for team A
+      m.teamAEvents.forEach((event) => {
+        if (event.type === "goal" && event.goalType !== "ownGoal") {
+          totalGoals++;
+          goalsMap.set(
+            event.player._id.toString(),
+            (goalsMap.get(event.player._id.toString()) || 0) + 1
+          );
+        }
+        if (event.assist) {
+          assistsMap.set(
+            event.assist._id.toString(),
+            (assistsMap.get(event.assist._id.toString()) || 0) + 1
+          );
+        }
+        if (event.type === "yellowCard") {
+          totalYellowCards++;
+          yellowCardsMap.set(
+            event.player._id.toString(),
+            (yellowCardsMap.get(event.player._id.toString()) || 0) + 1
+          );
+        }
+        if (event.type === "redCard") {
+          totalRedCards++;
+          redCardsMap.set(
+            event.player._id.toString(),
+            (redCardsMap.get(event.player._id.toString()) || 0) + 1
+            );
+          }
+        });
+        
+        // Process events for team B
+      m.teamBEvents.forEach((event) => {
+        if (event.type === "goal" && event.goalType !== "ownGoal") {
+          totalGoals++;
+          goalsMap.set(
+            event.player._id.toString(),
+            (goalsMap.get(event.player._id.toString()) || 0) + 1
+          );
+        }
+        if (event.assist) {
+          assistsMap.set(
+            event.assist._id.toString(),
+            (assistsMap.get(event.assist._id.toString()) || 0) + 1
+          );
+        }
+        if (event.type === "yellowCard") {
+          totalYellowCards++;
+          yellowCardsMap.set(
+            event.player._id.toString(),
+            (yellowCardsMap.get(event.player._id.toString()) || 0) + 1
+            );
+          }
+          if (event.type === "redCard") {
+            totalRedCards++;
+            redCardsMap.set(
+              event.player._id.toString(),
+            (redCardsMap.get(event.player._id.toString()) || 0) + 1
+          );
+        }
+      });
+    });
+    
+    // Step 3: Find players with the most goals, assists, yellow cards, and red cards
+    const getTopPlayerStats = async (statMap) => {
+      let topPlayers = [];
+      const sortedStats = [...statMap.entries()].sort((a, b) => b[1] - a[1]); // Sort by count
+      const topPlayerIds = sortedStats
+        .slice(0, 5)
+        .map(([playerId]) => playerId); // Get the top 5 players
+
+      if (topPlayerIds.length > 0) { 
+        // Populate player details
+        const topPlayersDetails = await player.find({
+          _id: { $in: topPlayerIds },
+        });
+
+        // Format response with player details and count
+        topPlayers = topPlayersDetails.map((p) => ({
+          player: p,
+          count: statMap.get(p._id.toString()),
+        }));
+      }
+
+      topPlayers.sort((a,b)=>b.count - a.count)
+      return topPlayers;
+    };
+
+    const mostGoals = await getTopPlayerStats(goalsMap);
+    const mostAssists = await getTopPlayerStats(assistsMap);
+    const mostYellow = await getTopPlayerStats(yellowCardsMap);
+    const mostRed = await getTopPlayerStats(redCardsMap);
+
+    // Step 4: Send the response
+    res.status(200).json({
+      success: true,
+      message: "Stats fetched successfully",
+      tournamentStats: {
+        goals: totalGoals,
+        matches: totalMatches,
+        teams: LatestTournament[0].tournament.teams.length,
+        yellowCards: totalYellowCards,
+        redCards: totalRedCards,
+        mostGoals,
+        mostAssists,
+        mostYellow,
+        mostRed,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
